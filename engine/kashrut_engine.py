@@ -1,5 +1,6 @@
 import os
 import json
+import time
 import google.generativeai as genai
 from PIL import Image
 from dotenv import load_dotenv
@@ -39,18 +40,69 @@ class KashrutEngine:
         if not api_key:
             raise ValueError("GOOGLE_API_KEY no encontrada en las variables de entorno.")
         genai.configure(api_key=api_key, transport='rest')
-        self.model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=SYSTEM_PROMPT)
+        
+        # Primary model
+        self.primary_model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=SYSTEM_PROMPT)
+        # Fallback model - using experimental model which may have different quota
+        self.fallback_model = genai.GenerativeModel('gemini-exp-1206', system_instruction=SYSTEM_PROMPT)
+
+    def _is_quota_error(self, error):
+        """Check if the error is a quota/rate limit error."""
+        error_str = str(error).lower()
+        return '429' in error_str or 'quota' in error_str or 'rate limit' in error_str
+
+    def _try_generate_content(self, model, prompt, image, max_retries=3):
+        """
+        Try to generate content with retry logic and exponential backoff.
+        """
+        for attempt in range(max_retries):
+            try:
+                response = model.generate_content([prompt, image])
+                return response
+            except Exception as e:
+                if self._is_quota_error(e):
+                    if attempt < max_retries - 1:
+                        # Exponential backoff: 2^attempt seconds
+                        wait_time = 2 ** attempt
+                        time.sleep(wait_time)
+                        continue
+                    else:
+                        # Last attempt failed, raise the error
+                        raise
+                else:
+                    # Non-quota error, raise immediately
+                    raise
+        return None
 
     def analyze_product(self, image: Image.Image):
         """
         Envía la imagen a Gemini y devuelve el JSON estructurado.
+        Implements retry logic and fallback model support.
         """
+        prompt = "Analiza este producto para Kashrut y responde solo en JSON."
+        
         try:
-            response = self.model.generate_content([
-                "Analiza este producto para Kashrut y responde solo en JSON.",
-                image
-            ])
+            # Try primary model first
+            response = self._try_generate_content(self.primary_model, prompt, image)
             
+        except Exception as e:
+            # If quota error, try fallback model
+            if self._is_quota_error(e):
+                try:
+                    response = self._try_generate_content(self.fallback_model, prompt, image, max_retries=2)
+                except Exception as fallback_error:
+                    return {
+                        "error": "Límite de cuota de API excedido. Por favor, intenta de nuevo más tarde o verifica tu plan de API.",
+                        "estado": "Error",
+                        "detalles": str(fallback_error)
+                    }
+            else:
+                return {
+                    "error": f"Error al procesar la imagen: {str(e)}",
+                    "estado": "Error"
+                }
+        
+        try:
             # Limpiar la respuesta por si Gemini incluye tildes invertidas de markdown
             content = response.text.strip()
             if content.startswith("```json"):
@@ -61,6 +113,6 @@ class KashrutEngine:
             return json.loads(content)
         except Exception as e:
             return {
-                "error": f"Error al procesar la imagen: {str(e)}",
+                "error": f"Error al parsear la respuesta: {str(e)}",
                 "estado": "Error"
             }

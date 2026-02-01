@@ -87,7 +87,22 @@ if uploaded_file is not None:
 
             if result:
                 if "error" in result:
-                    st.error(result["error"])
+                    # Display error with more context
+                    st.error(f"❌ {result['error']}")
+                    
+                    # If there are additional details, show them in an expander
+                    if "detalles" in result:
+                        with st.expander("Ver detalles técnicos"):
+                            st.code(result["detalles"])
+                    
+                    # Provide helpful suggestions
+                    if "cuota" in result["error"].lower() or "quota" in result["error"].lower():
+                        st.info("""
+                        💡 **Sugerencias:**
+                        - Espera unos minutos e intenta de nuevo
+                        - Verifica tu plan de API en [Google AI Studio](https://aistudio.google.com/app/apikey)
+                        - Considera actualizar a un plan de pago si usas la app frecuentemente
+                        """)
                 else:
                     # Display results in a nice UI
                     estado = result.get("estado", "Dudoso")
