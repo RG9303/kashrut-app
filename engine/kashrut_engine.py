@@ -43,8 +43,8 @@ class KashrutEngine:
         
         # Primary model
         self.primary_model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=SYSTEM_PROMPT)
-        # Fallback model - using experimental model which may have different quota
-        self.fallback_model = genai.GenerativeModel('gemini-exp-1206', system_instruction=SYSTEM_PROMPT)
+        # Fallback model - using lite version which has separate quota
+        self.fallback_model = genai.GenerativeModel('gemini-2.0-flash-lite', system_instruction=SYSTEM_PROMPT)
 
     def _is_quota_error(self, error):
         """Check if the error is a quota/rate limit error."""
