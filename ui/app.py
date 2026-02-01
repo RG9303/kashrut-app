@@ -59,90 +59,108 @@ if 'engine' not in st.session_state:
 
 cache = CacheManager()
 
-uploaded_file = st.file_uploader("Elige una imagen del producto...", type=["jpg", "jpeg", "png"])
 
-if uploaded_file is not None:
-    image = Image.open(uploaded_file)
-    st.image(image, caption='Imagen subida', use_container_width=True)
+# Tabs for navigation
+tab1, tab2 = st.tabs(["📸 Escáner", "⭐ Recomendados"])
+
+with tab1:
+    st.subheader("📸 Escáner de Productos")
+    uploaded_file = st.file_uploader("Elige una imagen del producto...", type=["jpg", "jpeg", "png"])
+
+    if uploaded_file is not None:
+        image = Image.open(uploaded_file)
+        st.image(image, caption='Imagen subida', use_container_width=True)
+        
+        # Get image bytes for caching
+        img_byte_arr = io.BytesIO()
+        image.save(img_byte_arr, format=image.format if image.format else 'PNG')
+        img_bytes = img_byte_arr.getvalue()
+
+        if st.button("Analizar Producto"):
+            with st.spinner('Analizando con IA...'):
+                # Check cache first
+                result = cache.get_cached_result(img_bytes)
+                
+                if result:
+                    st.info("⚡ Respuesta instantánea (desde caché)")
+                else:
+                    if 'engine' in st.session_state:
+                        result = st.session_state.engine.analyze_product(image)
+                        cache.save_to_cache(img_bytes, result)
+                    else:
+                        st.error("Engine no inicializado.")
+                        result = None
+
+                if result:
+                    if "error" in result:
+                        # Display error with more context
+                        st.error(f"❌ {result['error']}")
+                        
+                        # If there are additional details, show them in an expander
+                        if "detalles" in result:
+                            with st.expander("Ver detalles técnicos"):
+                                st.code(result["detalles"])
+                        
+                        # Provide helpful suggestions
+                        if "cuota" in result["error"].lower() or "quota" in result["error"].lower():
+                            st.info("""
+                            💡 **Sugerencias:**
+                            - Espera unos minutos e intenta de nuevo
+                            - Verifica tu plan de API en [Google AI Studio](https://aistudio.google.com/app/apikey)
+                            - Considera actualizar a un plan de pago si usas la app frecuentemente
+                            """)
+                    else:
+                        # Display results in a nice UI
+                        estado = result.get("estado", "Dudoso")
+                        css_class = ""
+                        if "PARVE" in estado.upper(): css_class = "kosher-parve"
+                        elif "DAIRY" in estado.upper() or "LÁCTEO" in estado.upper(): css_class = "kosher-dairy"
+                        elif "MEAT" in estado.upper() or "CARNE" in estado.upper(): css_class = "kosher-meat"
+                        elif "NO KOSHER" in estado.upper(): css_class = "no-kosher"
+                        else: css_class = "dudoso"
+
+                        st.markdown(f"""
+                            <div class="status-box {css_class}">
+                                <h2 style="text-align: center;">{estado}</h2>
+                                <p><strong>Producto:</strong> {result.get('producto', 'N/A')}</p>
+                            </div>
+                        """, unsafe_allow_html=True)
+
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.write("### 🏷️ Hechshers")
+                            symbols = result.get("símbolos_encontrados", [])
+                            if symbols:
+                                for s in symbols:
+                                    st.success(s)
+                            else:
+                                st.write("No se detectaron símbolos claros.")
+
+                        with col2:
+                            st.write("### 🔍 Alertas")
+                            alerts = result.get("ingredientes_alerta", [])
+                            if alerts:
+                                for a in alerts:
+                                    st.warning(a)
+                            else:
+                                st.write("Sin alertas de ingredientes.")
+
+                        st.info(f"**Justificación:** {result.get('justificación', 'N/A')}")
+                        
+                        if result.get("advertencia"):
+                            st.warning(f"⚠️ {result.get('advertencia')}")
+
+with tab2:
+    st.subheader("⭐ Productos Recomendados")
+    st.info("Esta sección está en construcción. Aquí encontrarás productos verificados popularmente.")
     
-    # Get image bytes for caching
-    img_byte_arr = io.BytesIO()
-    image.save(img_byte_arr, format=image.format if image.format else 'PNG')
-    img_bytes = img_byte_arr.getvalue()
-
-    if st.button("Analizar Producto"):
-        with st.spinner('Analizando con IA...'):
-            # Check cache first
-            result = cache.get_cached_result(img_bytes)
-            
-            if result:
-                st.info("⚡ Respuesta instantánea (desde caché)")
-            else:
-                if 'engine' in st.session_state:
-                    result = st.session_state.engine.analyze_product(image)
-                    cache.save_to_cache(img_bytes, result)
-                else:
-                    st.error("Engine no inicializado.")
-                    result = None
-
-            if result:
-                if "error" in result:
-                    # Display error with more context
-                    st.error(f"❌ {result['error']}")
-                    
-                    # If there are additional details, show them in an expander
-                    if "detalles" in result:
-                        with st.expander("Ver detalles técnicos"):
-                            st.code(result["detalles"])
-                    
-                    # Provide helpful suggestions
-                    if "cuota" in result["error"].lower() or "quota" in result["error"].lower():
-                        st.info("""
-                        💡 **Sugerencias:**
-                        - Espera unos minutos e intenta de nuevo
-                        - Verifica tu plan de API en [Google AI Studio](https://aistudio.google.com/app/apikey)
-                        - Considera actualizar a un plan de pago si usas la app frecuentemente
-                        """)
-                else:
-                    # Display results in a nice UI
-                    estado = result.get("estado", "Dudoso")
-                    css_class = ""
-                    if "PARVE" in estado.upper(): css_class = "kosher-parve"
-                    elif "DAIRY" in estado.upper() or "LÁCTEO" in estado.upper(): css_class = "kosher-dairy"
-                    elif "MEAT" in estado.upper() or "CARNE" in estado.upper(): css_class = "kosher-meat"
-                    elif "NO KOSHER" in estado.upper(): css_class = "no-kosher"
-                    else: css_class = "dudoso"
-
-                    st.markdown(f"""
-                        <div class="status-box {css_class}">
-                            <h2 style="text-align: center;">{estado}</h2>
-                            <p><strong>Producto:</strong> {result.get('producto', 'N/A')}</p>
-                        </div>
-                    """, unsafe_allow_html=True)
-
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.write("### 🏷️ Hechshers")
-                        symbols = result.get("símbolos_encontrados", [])
-                        if symbols:
-                            for s in symbols:
-                                st.success(s)
-                        else:
-                            st.write("No se detectaron símbolos claros.")
-
-                    with col2:
-                        st.write("### 🔍 Alertas")
-                        alerts = result.get("ingredientes_alerta", [])
-                        if alerts:
-                            for a in alerts:
-                                st.warning(a)
-                        else:
-                            st.write("Sin alertas de ingredientes.")
-
-                    st.info(f"**Justificación:** {result.get('justificación', 'N/A')}")
-                    
-                    if result.get("advertencia"):
-                        st.warning(f"⚠️ {result.get('advertencia')}")
+    st.markdown("### 🥤 Bebidas")
+    st.write("- Coca-Cola (Regular, Zero, Diet) - OUP")
+    st.write("- Pepsi (Regular, Black) - OK")
+    
+    st.markdown("### 🍫 Snacks")
+    st.write("- Lays Clásicas - OU")
+    st.write("- Pringles Original - OU")
 
 st.sidebar.markdown("---")
 st.sidebar.write("### Instrucciones")
