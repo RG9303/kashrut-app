@@ -41,10 +41,10 @@ class KashrutEngine:
             raise ValueError("GOOGLE_API_KEY no encontrada en las variables de entorno.")
         genai.configure(api_key=api_key, transport='rest')
         
-        # Primary model
-        self.primary_model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=SYSTEM_PROMPT)
-        # Fallback model - using lite version which has separate quota
-        self.fallback_model = genai.GenerativeModel('gemini-2.0-flash-lite', system_instruction=SYSTEM_PROMPT)
+        # Primary model - using stable flash model
+        self.primary_model = genai.GenerativeModel('gemini-flash-latest', system_instruction=SYSTEM_PROMPT)
+        # Fallback model - using pro model
+        self.fallback_model = genai.GenerativeModel('gemini-pro-latest', system_instruction=SYSTEM_PROMPT)
 
     def _is_quota_error(self, error):
         """Check if the error is a quota/rate limit error."""
