@@ -39,7 +39,7 @@ class KashrutEngine:
         if not api_key:
             raise ValueError("GOOGLE_API_KEY no encontrada en las variables de entorno.")
         genai.configure(api_key=api_key, transport='rest')
-        self.model = genai.GenerativeModel('gemini-1.5-flash', system_instruction=SYSTEM_PROMPT)
+        self.model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=SYSTEM_PROMPT)
 
     def analyze_product(self, image: Image.Image):
         """
