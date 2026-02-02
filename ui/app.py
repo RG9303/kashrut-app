@@ -121,28 +121,43 @@ with tab1:
     result = None
 
     if mode == "📷 Foto":
-        uploaded_file = st.file_uploader("Elige una imagen del producto...", type=["jpg", "jpeg", "png"])
+        uploaded_files = st.file_uploader("Sube fotos (Frente y Reverso recomendado)...", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
 
-        if uploaded_file is not None:
-            image = Image.open(uploaded_file)
-            st.image(image, caption='Imagen subida', use_container_width=True)
+        if uploaded_files:
+            images = []
+            # Display images in a grid
+            cols = st.columns(min(len(uploaded_files), 3))
             
-            # Get image bytes for caching
-            img_byte_arr = io.BytesIO()
-            image.save(img_byte_arr, format=image.format if image.format else 'PNG')
-            img_bytes = img_byte_arr.getvalue()
+            img_bytes_list = []
 
-            if st.button("Analizar Imagen"):
-                with st.spinner('Analizando imagen...'):
+            for i, uploaded_file in enumerate(uploaded_files):
+                image = Image.open(uploaded_file)
+                images.append(image)
+                
+                # Display in column (wrap around if more than 3)
+                col_idx = i % 3
+                with cols[col_idx]:
+                    st.image(image, caption=f'Imagen {i+1}', use_container_width=True)
+                
+                # Bytes for cache key
+                img_byte_arr = io.BytesIO()
+                image.save(img_byte_arr, format=image.format if image.format else 'PNG')
+                img_bytes_list.append(img_byte_arr.getvalue())
+
+            # Create a combined cache key from all images
+            combined_bytes = b"".join(img_bytes_list)
+
+            if st.button("Analizar Imágenes"):
+                with st.spinner('Analizando con IA (Deep Analysis)...'):
                     # Check cache first
-                    result = cache.get_cached_result(img_bytes)
+                    result = cache.get_cached_result(combined_bytes)
                     
                     if result:
                         st.info("⚡ Respuesta instantánea (desde caché)")
                     else:
                         if 'engine' in st.session_state:
-                            result = st.session_state.engine.analyze_product(image)
-                            cache.save_to_cache(img_bytes, result)
+                            result = st.session_state.engine.analyze_product(images)
+                            cache.save_to_cache(combined_bytes, result)
                         else:
                             st.error("Engine no inicializado.")
                             result = None

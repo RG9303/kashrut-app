@@ -56,57 +56,49 @@ class KashrutEngine:
         error_str = str(error).lower()
         return '429' in error_str or 'quota' in error_str or 'rate limit' in error_str
 
-    def _try_generate_content(self, model, prompt, image, max_retries=3):
+    def _try_generate_content(self, model, content_list, _unused_arg=None, max_retries=3):
         """
         Try to generate content with retry logic and exponential backoff.
         """
         for attempt in range(max_retries):
             try:
-                response = model.generate_content([prompt, image])
+                response = model.generate_content(content_list)
                 return response
             except Exception as e:
-                if self._is_quota_error(e):
-                    if attempt < max_retries - 1:
-                        # Exponential backoff: 2^attempt seconds
-                        wait_time = 2 ** attempt
-                        time.sleep(wait_time)
-                        continue
-                    else:
-                        # Last attempt failed, raise the error
-                        raise
-                else:
-                    # Non-quota error, raise immediately
-                    raise
+                # Exponential backoff
+                time.sleep(2 ** attempt)
+                if attempt == max_retries - 1:
+                    raise e
         return None
 
-    def analyze_product(self, image: Image.Image):
+    def analyze_product(self, images):
         """
-        Envía la imagen a Gemini y devuelve el JSON estructurado.
-        Implements retry logic and fallback model support.
+        Analiza una o varias imágenes de un producto.
+        Args:
+            images: Puede ser una sola imagen (PIL.Image) o una lista de imágenes.
         """
-        prompt = "Analiza este producto para Kashrut y responde solo en JSON."
+        prompt = "Analiza estas imágenes (frente y reverso) del producto. Busca sellos en el frente y revisa ingredientes al reverso. Si no se ve bien, avisa en 'alertas'."
         
+        # Ensure input is a list
+        if not isinstance(images, list):
+            images = [images]
+
+        content = [prompt] + images
+
         try:
-            # Try primary model first
-            response = self._try_generate_content(self.primary_model, prompt, image)
-            
+            # Try primary model
+            response = self._try_generate_content(self.primary_model, content)
+            return self._parse_response(response)
         except Exception as e:
-            # If quota error, try fallback model
-            if self._is_quota_error(e):
-                try:
-                    response = self._try_generate_content(self.fallback_model, prompt, image, max_retries=2)
-                except Exception as fallback_error:
-                    return {
-                        "error": "Límite de cuota de API excedido. Por favor, intenta de nuevo más tarde o verifica tu plan de API.",
-                        "estado": "Error",
-                        "detalles": str(fallback_error)
-                    }
-            else:
-                return {
-                    "error": f"Error al procesar la imagen: {str(e)}",
-                    "estado": "Error"
-                }
-        
+            print(f"Error con modelo primario: {e}")
+            try:
+                # Try fallback model
+                response = self._try_generate_content(self.fallback_model, content)
+                return self._parse_response(response)
+            except Exception as e2:
+                return {"error": f"Error en análisis de imágenes: {str(e2)}"}
+
+    def _parse_response(self, response):
         try:
             # Limpiar la respuesta por si Gemini incluye tildes invertidas de markdown
             content = response.text.strip()
