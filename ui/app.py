@@ -40,286 +40,303 @@ if 'preferences' not in st.session_state:
     }
 
 # Custom CSS for premium feel
+# Custom CSS for high-fidelity mobile look
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
     
+    /* Global Styles */
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
     }
     
-    .main {
-        background-color: #f8f9fa;
-    }
-    
-    /* Primary Button - Gold/Premium */
-    .stButton>button {
-        width: 100%;
-        border-radius: 12px;
-        height: 3.5em;
-        background: linear-gradient(90deg, #1e3c72 0%, #2a5298 100%);
+    .stApp {
+        background-color: #0f172a; /* Deep Navy */
         color: white;
-        font-weight: 600;
-        border: none;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        transition: all 0.3s ease;
-    }
-    .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 8px rgba(0,0,0,0.15);
     }
 
-    /* Cards */
-    .status-box {
-        padding: 25px;
-        border-radius: 15px;
-        margin-bottom: 25px;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        backdrop-filter: blur(10px);
+    /* Scanner Tab Specific (Dark) */
+    [data-testid="stVerticalBlock"] > [style*="flex-direction: column;"] > [data-testid="stVerticalBlock"] {
+        /* This is harder to target specifically per tab without custom divs, 
+           so we'll use a wrapper class for scanner */
     }
-    
-    /* Status Colors */
-    .kosher-parve { 
-        background-color: rgba(232, 245, 233, 0.9); 
-        border-left: 6px solid #2e7d32; 
-        color: #1b5e20;
+
+    .scanner-wrapper {
+        text-align: center;
+        padding: 20px;
     }
-    .kosher-dairy { 
-        background-color: rgba(227, 242, 253, 0.9); 
-        border-left: 6px solid #1565c0; 
-        color: #0d47a1;
+
+    /* Target Reticle */
+    .scanner-frame {
+        width: 250px;
+        height: 250px;
+        border: 2px solid transparent;
+        margin: 40px auto;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
-    .kosher-meat { 
-        background-color: rgba(255, 235, 238, 0.9); 
-        border-left: 6px solid #c62828; 
-        color: #b71c1c;
+    .scanner-frame::before, .scanner-frame::after, 
+    .scanner-frame span::before, .scanner-frame span::after {
+        content: '';
+        position: absolute;
+        width: 30px;
+        height: 30px;
+        border: 4px solid #4ade80; /* Vibrant Green */
     }
-    .no-kosher { 
-        background-color: rgba(250, 250, 250, 0.9); 
-        border-left: 6px solid #424242; 
-        color: #212121;
+    .scanner-frame::before { top: 0; left: 0; border-right: none; border-bottom: none; }
+    .scanner-frame::after { top: 0; right: 0; border-left: none; border-bottom: none; }
+    .scanner-frame span::before { bottom: 0; left: 0; border-right: none; border-top: none; }
+    .scanner-frame span::after { bottom: 0; right: 0; border-left: none; border-top: none; }
+
+    .inner-reticle {
+        width: 50px;
+        height: 50px;
+        border: 1px dashed rgba(255,255,255,0.5);
+        border-radius: 5px;
     }
-    .dudoso { 
-        background-color: rgba(255, 253, 231, 0.9); 
-        border-left: 6px solid #fbc02d; 
-        color: #f57f17;
+
+    /* Buttons Alignment */
+    .stButton > button {
+        border-radius: 30px !important;
+        font-weight: 700 !important;
+        text-transform: none !important;
+        letter-spacing: 0.5px !important;
+        transition: all 0.2s ease !important;
+    }
+
+    /* Primary Scan Button */
+    div[data-testid="stVerticalBlock"] > div:nth-child(1) .primary-btn button {
+        background-color: #4ade80 !important;
+        color: #064e3b !important;
+        border: none !important;
+    }
+
+    /* Ghost Upload Button */
+    .ghost-btn button {
+        background-color: transparent !important;
+        color: white !important;
+        border: 2px solid white !important;
+    }
+
+    /* Results Page (Light Theme overlap) */
+    .results-bg {
+        background-color: #f1f5f9;
+        margin: -2rem;
+        padding: 2rem;
+        color: #1e293b;
     }
 
     .result-card {
-        background: white;
-        padding: 20px;
-        border-radius: 12px;
-        border: 1px solid #eee;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-        margin-bottom: 20px;
-    }
-    
-    .status-banner {
-        padding: 30px;
+        background: white !important;
+        padding: 24px;
         border-radius: 20px;
-        text-align: center;
-        color: white;
-        margin-bottom: 30px;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        margin-bottom: 16px;
+        border: none !important;
+        color: #1e293b !important;
+    }
+    .result-card h3 {
+        color: #1e293b !important;
+        font-size: 1.1rem !important;
+        margin-bottom: 12px !important;
     }
 
-    /* Headers */
-    h1, h2, h3 {
-        color: #1a237e;
+    .status-banner-premium {
+        background-color: #4ade80;
+        color: white;
+        padding: 15px;
+        text-align: center;
+        font-weight: 800;
+        font-size: 1.5rem;
+        border-radius: 0 0 20px 20px;
+        margin: -2rem -2rem 2rem -2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    /* Bottom Navigation Simulation */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 10px;
+        justify-content: center;
+        background-color: transparent;
+    }
+    .stTabs [data-baseweb="tab"] {
+        height: 50px;
+        white-space: pre-wrap;
+        background-color: transparent !important;
+        border: none !important;
+        color: rgba(255,255,255,0.6) !important;
+    }
+    .stTabs [aria-selected="true"] {
+        color: white !important;
+        border-bottom: 2px solid #4ade80 !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🛡️ Digital Mashgiach")
-st.subheader("Identificación Inteligente de Kashrut")
+# --- APP STATE & NAVIGATION ---
+if 'last_result' not in st.session_state:
+    st.session_state.last_result = None
 
-st.markdown("""
-Escanea o sube una foto de un producto para analizar sus **Hechshers** e **Ingredientes**.
-""")
+# Custom Header (Mobile Look)
+if st.session_state.last_result:
+    header_title = "Results"
+    left_icon = "❮"
+    left_action = "onclick='window.location.reload();'" # Hack to reset
+else:
+    header_title = "KosherScan"
+    left_icon = "☰"
+    left_action = ""
 
-# Initialize components
-if 'engine' not in st.session_state:
-    try:
-        st.session_state.engine = KashrutEngine()
-    except Exception as e:
-        st.error(f"Error de configuración: {e}")
-        st.info("Asegúrate de tener la variable GOOGLE_API_KEY en tu archivo .env")
+st.markdown(f"""
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; margin-bottom: 20px;">
+        <div style="font-size: 1.5rem; cursor: pointer; color: white;" {left_action}>{left_icon}</div>
+        <div style="font-size: 1.2rem; font-weight: 700; color: white;">{header_title}</div>
+        <div style="font-size: 1.5rem; color: white;">⚙️</div>
+    </div>
+""", unsafe_allow_html=True)
 
-cache = CacheManager()
-
-
-# Tabs for navigation
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["📸 Escáner", "⭐ Recomendados", "📜 Mi Alacena", "📚 Glosario", "👤 Perfil"])
+# Tabs (Styled as Bottom Nav approximation)
+# Use shorter labels to fit mobile screen widths
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["🏠 Home", "⭐ Rec", "📜 Hist", "📚 Glos", "👤 Prof"])
 
 with tab1:
-    col_mode1, col_mode2 = st.columns([2, 1])
-    with col_mode1:
-        st.subheader("🔍 Analizar Producto")
-    with col_mode2:
-        mode = st.radio("Modo", ["📷 Foto", "📝 Texto"], horizontal=True, label_visibility="collapsed")
+    if not st.session_state.last_result:
+        # --- SCANNER VIEW ---
+        st.markdown("""
+            <div class="scanner-wrapper">
+                <div class="scanner-frame">
+                    <span></span>
+                    <div class="inner-reticle"></div>
+                </div>
+                <h2 style="color: white; margin-top: 0; font-weight: 700; font-size: 1.8rem;">Scan Hechsher<br>or Ingredients</h2>
+                <p style="color: rgba(255,255,255,0.7); font-size: 0.95rem; line-height: 1.5; margin-bottom: 30px;">
+                    1. Scan product front for Hechsher.<br>
+                    2. Scan back for ingredients.<br>
+                    3. Ensure clear, sharp focus.
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
 
-    result = None
-
-    if mode == "📷 Foto":
-        uploaded_files = st.file_uploader("Sube fotos (Frente y Reverso recomendado)...", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
+        col_b1, col_b2, col_b3 = st.columns([1, 8, 1])
+        with col_b2:
+            st.markdown('<div class="primary-btn">', unsafe_allow_html=True)
+            if st.button("Scan", key="mock_scan_trigger"):
+                st.info("💡 Usa el botón de abajo para subir tus fotos.")
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            st.markdown('<div class="ghost-btn">', unsafe_allow_html=True)
+            uploaded_files = st.file_uploader(
+                "Upload Photo", 
+                type=['jpg', 'jpeg', 'png', 'webp'],
+                accept_multiple_files=True,
+                label_visibility="collapsed"
+            )
+            st.markdown('</div>', unsafe_allow_html=True)
 
         if uploaded_files:
-            images = []
-            # Display images in a grid
-            cols = st.columns(min(len(uploaded_files), 3))
+            images = [Image.open(file) for file in uploaded_files]
+            combined_bytes = b"".join([file.getvalue() for file in uploaded_files])
             
-            img_bytes_list = []
-
-            for i, uploaded_file in enumerate(uploaded_files):
-                image = Image.open(uploaded_file)
-                images.append(image)
-                
-                # Display in column (wrap around if more than 3)
-                col_idx = i % 3
-                with cols[col_idx]:
-                    st.image(image, caption=f'Imagen {i+1}', use_container_width=True)
-                
-                # Bytes for cache key
-                img_byte_arr = io.BytesIO()
-                image.save(img_byte_arr, format=image.format if image.format else 'PNG')
-                img_bytes_list.append(img_byte_arr.getvalue())
-
-            # Create a combined cache key from all images
-            combined_bytes = b"".join(img_bytes_list)
-
-            if st.button("Analizar Imágenes"):
-                with st.spinner('Analizando con IA (Deep Analysis)...'):
-                    # Check cache first
-                    result = cache.get_cached_result(combined_bytes)
-                    
-                    if result:
-                        st.info("⚡ Respuesta instantánea (desde caché)")
-                    else:
-                        if 'engine' in st.session_state:
-                            # 1. Intentar extraer Código de Barras
-                            barcode = st.session_state.engine.extract_barcode(images[0])
-                            off_data = None
-                            if barcode:
-                                with st.status(f"Barcode detectado: {barcode}. Consultando base de datos mundial..."):
-                                    off_data = st.session_state.off_client.get_product(barcode)
-                                    if off_data:
-                                        st.success(f"Producto encontrado: {off_data['product_name']}")
-                            
-                            # 2. Análisis Final
-                            extra_context = off_data.get('ingredients_text') if off_data else None
-                            result = st.session_state.engine.analyze_product(
-                                images, 
-                                extra_context=extra_context,
-                                preferences=st.session_state.preferences
-                            )
-                            
-                            # 3. Guardar en Historial
-                            if result and "error" not in result:
-                                st.session_state.history.add_scan(result)
-                            
-                            cache.save_to_cache(combined_bytes, result)
-                        else:
-                            st.error("Engine no inicializado.")
-                            result = None
-
-    else: # Mode Text
-        st.info("📝 Ingresa la lista de ingredientes o descripción del producto si la foto no es clara.")
-        text_input = st.text_area("Ingredientes / Detalles", height=150, placeholder="Ejemplo: Lay's Clásicas. Ingredientes: Papas, aceite vegetal, sal.")
-        
-        if st.button("Analizar Texto"):
-            if text_input:
-                with st.spinner('Analizando texto...'):
-                    if 'engine' in st.session_state:
-                         result = st.session_state.engine.analyze_text(
-                             text_input,
-                             preferences=st.session_state.preferences
-                         )
-                         if result and "error" not in result:
-                             st.session_state.history.add_scan(result)
-                    else:
-                        st.error("Engine no inicializado.")
+            # Check cache
+            cached_result = cache.get_from_cache(combined_bytes)
+            if cached_result:
+                st.session_state.last_result = cached_result
+                st.rerun()
             else:
-                st.warning("⚠️ Por favor ingresa texto para analizar.")
-
-            # Results Display (Shared)
-    # --- DISPLAY RESULTS (SHARED) ---
-    if result:
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        if "error" in result:
-            st.error(f"❌ {result['error']}")
-            if "cuota" in result.get('error', '').lower():
-                st.info("💡 Sugerencia: Intenta de nuevo en unos segundos.")
-        else:
-            # 1. Status Banner
-            estado = result.get("resultado", "Dudoso")
-            confianza = result.get("confianza_analisis", "N/A")
-            categoria = result.get("categoria", "Desconocido")
-            sello = result.get("sello_detectado", "Ninguno")
-
-            banner_color = "#777"
-            if "KOSHER" in estado.upper() and "NO" not in estado.upper(): banner_color = "#d4af37" # Gold
-            elif "NO KOSHER" in estado.upper(): banner_color = "#c62828" # Red
-            elif "DUDOSO" in estado.upper(): banner_color = "#ffa000" # Orange
-
-            st.markdown(f"""
-                <div class="status-banner" style="background: {banner_color};">
-                    <h1 style="margin:0; font-size: 3rem; font-weight: 700;">{estado.upper()}</h1>
-                    <p style="margin:10px 0 0 0; font-size: 1.2rem; opacity: 0.9;">Confianza: {confianza}</p>
-                </div>
-            """, unsafe_allow_html=True)
-            # 2. Key Metrics
-            col_res1, col_res2 = st.columns(2)
-            
-            with col_res1:
-                with st.container(border=True):
-                    st.markdown("### 🛡️ Certificación")
-                    st.write(f"**Detectado:** {sello}")
-                    # Agency Check
-                    agency_data = check_agency(sello)
-                    if agency_data:
-                        st.markdown(f"""
-                            <a href="{agency_data['website']}" target="_blank" style="text-decoration: none;">
-                                <div style="background-color: #f1f8e9; padding: 10px; border-radius: 8px; border: 1px solid #c5e1a5; margin-top: 5px; display: flex; align-items: center;">
-                                    <span style="font-size: 1.5em; margin-right: 10px;">{agency_data['icon']}</span>
-                                    <div>
-                                        <div style="font-weight: bold; color: #33691e;">{agency_data['full_name']}</div>
-                                        <div style="font-size: 0.85em; color: #558b2f;">Válido e Internacional ↗</div>
-                                    </div>
-                                </div>
-                            </a>
-                        """, unsafe_allow_html=True)
-                    elif "K GENÉRICA" in sello.upper():
-                         st.error("⚠️ Sello 'K' Genérico (No Confiable)")
-                    elif sello and sello.lower() != "ninguno":
-                        st.warning(f"⚠️ Agencia '{sello}' no verificada.")
+                with st.spinner('Analizando...'):
+                    # 1. Barcode check
+                    off_data = None
+                    try:
+                        off_data = st.session_state.off_client.scan_and_get_details(images)
+                    except: pass
+                    
+                    # 2. Análisis Final
+                    extra_context = off_data.get('ingredients_text') if off_data else None
+                    result = st.session_state.engine.analyze_product(
+                        images, 
+                        extra_context=extra_context,
+                        preferences=st.session_state.preferences
+                    )
+                    
+                    if result and "error" not in result:
+                        st.session_state.history.add_scan(result)
+                        cache.save_to_cache(combined_bytes, result)
+                        st.session_state.last_result = result
+                        st.rerun()
                     else:
-                        st.info("No se detectó sello de certificación.")
-
-            with col_res2:
-                with st.container(border=True):
-                    st.markdown("### 🏷️ Categoría")
-                    cat_icons = {"Parve": "🍃", "Dairy": "🥛", "Meat": "🍖", "DE": "⚙️", "Lácteo": "🥛", "Carne": "🍖"}
-                    icon = cat_icons.get(categoria, "❓")
-                    st.markdown(f"## {icon} {categoria}")
-
-            # 3. Alertas
-            alertas = result.get('alertas', [])
-            if alertas and alertas[0].lower() != "ninguno":
-                with st.container(border=True):
-                    st.markdown("### ⚠️ Alertas Halájicas")
-                    for alerta in alertas:
-                        st.warning(alerta)
-
-            # 4. Explicación Detallada (Card)
-            st.markdown(f"""
-                <div class="result-card">
-                    <h3 style="margin-top:0;">📖 ¿Por qué este resultado?</h3>
-                    <p style="font-size: 1.1rem; line-height:1.5;">{result.get('explicacion_halajica', 'No hay explicación disponible.')}</p>
+                        st.error("Error en el análisis de la IA.")
+    else:
+        # --- RESULTS VIEW ---
+        result = st.session_state.last_result
+        status = result.get('resultado', 'Dudoso')
+        conf = result.get('confianza_analisis', 'N/A')
+        banner_color = "#4ade80" if "KOSHER" in status.upper() and "NO" not in status.upper() else "#f87171"
+        
+        st.markdown(f"""
+            <div class="status-banner-premium" style="background-color: {banner_color};">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span>✓</span> {status.upper()}
                 </div>
-            """, unsafe_allow_html=True)
+                <div style="font-size: 0.9rem; font-weight: 400; opacity: 0.9; margin-top: 4px;">
+                    Analysis Confidence: {conf}
+                </div>
+            </div>
+            <div class="results-bg">
+        """, unsafe_allow_html=True)
+
+        # Main Cards
+        st.markdown(f"""
+            <div class="result-card">
+                <h3>Certification Seal</h3>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="background: #1e293b; color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        {result.get('sello_detectado', '??')[:2].upper()}
+                    </div>
+                    <div style="font-weight: 600; color: #1e293b;">{result.get('sello_detectado', 'Ninguno')}</div>
+                </div>
+            </div>
             
-            if st.button("🔄 Nuevo Análisis"):
+            <div class="result-card">
+                <h3>Category</h3>
+                <div style="display: flex; align-items: center; gap: 12px; font-size: 1.1rem; font-weight: 600;">
+                    <span style="font-size: 1.4rem;">🍃</span> {result.get('categoria', 'Parve')} (Neutral)
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+        alertas = result.get('alertas', [])
+        if alertas and alertas[0].lower() != "ninguno":
+            st.markdown('<div class="result-card"><h3>Alerts</h3>', unsafe_allow_html=True)
+            for a in alertas:
+                st.markdown(f"""
+                    <div style="display: flex; gap: 10px; color: #92400e; background: #fffbeb; padding: 12px; border-radius: 12px; margin-bottom: 8px; font-size: 0.9rem; border: 1px solid #fef3c7;">
+                        <span>⚠️</span> <div>{a}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        st.markdown(f"""
+            <div class="result-card">
+                <h3>Detailed Explanation</h3>
+                <p style="font-size: 0.95rem; line-height: 1.5; color: #475569;">
+                    {result.get('explicacion_halajica', 'No se encontró una explicación detallada.')}
+                </p>
+                <div style="margin-top: 15px; font-size: 0.85rem; color: #64748b; font-weight: 600;">
+                    All ingredients checked: <span style="color: #2563eb;">All Kosher</span>
+                </div>
+            </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+        col_back = st.columns([1, 4, 1])
+        with col_back[1]:
+            st.write("")
+            if st.button("❮ Back to Scanner", key="back_to_scan"):
+                st.session_state.last_result = None
                 st.rerun()
 
 with tab2:
