@@ -19,26 +19,73 @@ st.set_page_config(
 # Custom CSS for premium feel
 st.markdown("""
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+    }
+    
     .main {
         background-color: #f8f9fa;
     }
+    
+    /* Primary Button - Gold/Premium */
     .stButton>button {
         width: 100%;
-        border-radius: 10px;
-        height: 3em;
-        background-color: #2e7d32;
+        border-radius: 12px;
+        height: 3.5em;
+        background: linear-gradient(90deg, #1e3c72 0%, #2a5298 100%);
         color: white;
+        font-weight: 600;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
     }
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+    }
+
+    /* Cards */
     .status-box {
-        padding: 20px;
-        border-radius: 10px;
-        margin-bottom: 20px;
+        padding: 25px;
+        border-radius: 15px;
+        margin-bottom: 25px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        backdrop-filter: blur(10px);
     }
-    .kosher-parve { background-color: #e8f5e9; border: 2px solid #2e7d32; }
-    .kosher-dairy { background-color: #e3f2fd; border: 2px solid #1976d2; }
-    .kosher-meat { background-color: #ffebee; border: 2px solid #c62828; }
-    .no-kosher { background-color: #fafafa; border: 2px solid #616161; }
-    .dudoso { background-color: #fffde7; border: 2px solid #fbc02d; }
+    
+    /* Status Colors */
+    .kosher-parve { 
+        background-color: rgba(232, 245, 233, 0.9); 
+        border-left: 6px solid #2e7d32; 
+        color: #1b5e20;
+    }
+    .kosher-dairy { 
+        background-color: rgba(227, 242, 253, 0.9); 
+        border-left: 6px solid #1565c0; 
+        color: #0d47a1;
+    }
+    .kosher-meat { 
+        background-color: rgba(255, 235, 238, 0.9); 
+        border-left: 6px solid #c62828; 
+        color: #b71c1c;
+    }
+    .no-kosher { 
+        background-color: rgba(250, 250, 250, 0.9); 
+        border-left: 6px solid #424242; 
+        color: #212121;
+    }
+    .dudoso { 
+        background-color: rgba(255, 253, 231, 0.9); 
+        border-left: 6px solid #fbc02d; 
+        color: #f57f17;
+    }
+
+    /* Headers */
+    h1, h2, h3 {
+        color: #1a237e;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -64,91 +111,106 @@ cache = CacheManager()
 tab1, tab2 = st.tabs(["📸 Escáner", "⭐ Recomendados"])
 
 with tab1:
-    st.subheader("📸 Escáner de Productos")
-    uploaded_file = st.file_uploader("Elige una imagen del producto...", type=["jpg", "jpeg", "png"])
+    col_mode1, col_mode2 = st.columns([2, 1])
+    with col_mode1:
+        st.subheader("🔍 Analizar Producto")
+    with col_mode2:
+        mode = st.radio("Modo", ["📷 Foto", "📝 Texto"], horizontal=True, label_visibility="collapsed")
 
-    if uploaded_file is not None:
-        image = Image.open(uploaded_file)
-        st.image(image, caption='Imagen subida', use_container_width=True)
+    result = None
+
+    if mode == "📷 Foto":
+        uploaded_file = st.file_uploader("Elige una imagen del producto...", type=["jpg", "jpeg", "png"])
+
+        if uploaded_file is not None:
+            image = Image.open(uploaded_file)
+            st.image(image, caption='Imagen subida', use_container_width=True)
+            
+            # Get image bytes for caching
+            img_byte_arr = io.BytesIO()
+            image.save(img_byte_arr, format=image.format if image.format else 'PNG')
+            img_bytes = img_byte_arr.getvalue()
+
+            if st.button("Analizar Imagen"):
+                with st.spinner('Analizando imagen...'):
+                    # Check cache first
+                    result = cache.get_cached_result(img_bytes)
+                    
+                    if result:
+                        st.info("⚡ Respuesta instantánea (desde caché)")
+                    else:
+                        if 'engine' in st.session_state:
+                            result = st.session_state.engine.analyze_product(image)
+                            cache.save_to_cache(img_bytes, result)
+                        else:
+                            st.error("Engine no inicializado.")
+                            result = None
+
+    else: # Mode Text
+        st.info("📝 Ingresa la lista de ingredientes o descripción del producto si la foto no es clara.")
+        text_input = st.text_area("Ingredientes / Detalles", height=150, placeholder="Ejemplo: Lay's Clásicas. Ingredientes: Papas, aceite vegetal, sal.")
         
-        # Get image bytes for caching
-        img_byte_arr = io.BytesIO()
-        image.save(img_byte_arr, format=image.format if image.format else 'PNG')
-        img_bytes = img_byte_arr.getvalue()
-
-        if st.button("Analizar Producto"):
-            with st.spinner('Analizando con IA...'):
-                # Check cache first
-                result = cache.get_cached_result(img_bytes)
-                
-                if result:
-                    st.info("⚡ Respuesta instantánea (desde caché)")
-                else:
+        if st.button("Analizar Texto"):
+            if text_input:
+                with st.spinner('Analizando texto...'):
                     if 'engine' in st.session_state:
-                        result = st.session_state.engine.analyze_product(image)
-                        cache.save_to_cache(img_bytes, result)
+                         result = st.session_state.engine.analyze_text(text_input)
                     else:
                         st.error("Engine no inicializado.")
-                        result = None
+            else:
+                st.warning("⚠️ Por favor ingresa texto para analizar.")
 
-                if result:
-                    if "error" in result:
-                        # Display error with more context
-                        st.error(f"❌ {result['error']}")
-                        
-                        # If there are additional details, show them in an expander
-                        if "detalles" in result:
-                            with st.expander("Ver detalles técnicos"):
-                                st.code(result["detalles"])
-                        
-                        # Provide helpful suggestions
-                        if "cuota" in result["error"].lower() or "quota" in result["error"].lower():
-                            st.info("""
-                            💡 **Sugerencias:**
-                            - Espera unos minutos e intenta de nuevo
-                            - Verifica tu plan de API en [Google AI Studio](https://aistudio.google.com/app/apikey)
-                            - Considera actualizar a un plan de pago si usas la app frecuentemente
-                            """)
-                    else:
-                        # Display results in a nice UI
-                        estado = result.get("estado", "Dudoso")
-                        css_class = ""
-                        if "PARVE" in estado.upper(): css_class = "kosher-parve"
-                        elif "DAIRY" in estado.upper() or "LÁCTEO" in estado.upper(): css_class = "kosher-dairy"
-                        elif "MEAT" in estado.upper() or "CARNE" in estado.upper(): css_class = "kosher-meat"
-                        elif "NO KOSHER" in estado.upper(): css_class = "no-kosher"
-                        else: css_class = "dudoso"
+    # Results Display (Shared)
+    if result:
+        if "error" in result:
+            st.error(f"❌ {result['error']}")
+            if "detalles" in result:
+                with st.expander("Ver detalles técnicos"):
+                    st.code(result["detalles"])
+            
+            if "cuota" in result["error"].lower() or "quota" in result["error"].lower():
+                st.info("💡 **Sugerencia:** Tu plan gratuito de Gemini puede haberse agotado. Intenta de nuevo en unos minutos.")
+        else:
+            # Display results in a nice UI
+            estado = result.get("estado", "Dudoso")
+            css_class = ""
+            if "PARVE" in estado.upper(): css_class = "kosher-parve"
+            elif "DAIRY" in estado.upper() or "LÁCTEO" in estado.upper(): css_class = "kosher-dairy"
+            elif "MEAT" in estado.upper() or "CARNE" in estado.upper(): css_class = "kosher-meat"
+            elif "NO KOSHER" in estado.upper(): css_class = "no-kosher"
+            else: css_class = "dudoso"
 
-                        st.markdown(f"""
-                            <div class="status-box {css_class}">
-                                <h2 style="text-align: center;">{estado}</h2>
-                                <p><strong>Producto:</strong> {result.get('producto', 'N/A')}</p>
-                            </div>
-                        """, unsafe_allow_html=True)
+            st.markdown(f"""
+                <div class="status-box {css_class}">
+                    <h2 style="text-align: center; margin-bottom: 5px;">{estado}</h2>
+                    <p style="text-align: center; font-size: 1.1em; opacity: 0.8;">{result.get('producto', 'Producto Detectado')}</p>
+                </div>
+            """, unsafe_allow_html=True)
 
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            st.write("### 🏷️ Hechshers")
-                            symbols = result.get("símbolos_encontrados", [])
-                            if symbols:
-                                for s in symbols:
-                                    st.success(s)
-                            else:
-                                st.write("No se detectaron símbolos claros.")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("### 🏷️ Hechshers")
+                symbols = result.get("símbolos_encontrados", [])
+                if symbols:
+                    for s in symbols:
+                        st.success(f"✅ {s}")
+                else:
+                    st.info("No se detectaron símbolos.")
 
-                        with col2:
-                            st.write("### 🔍 Alertas")
-                            alerts = result.get("ingredientes_alerta", [])
-                            if alerts:
-                                for a in alerts:
-                                    st.warning(a)
-                            else:
-                                st.write("Sin alertas de ingredientes.")
+            with col2:
+                st.markdown("### 🔍 Alertas")
+                alerts = result.get("ingredientes_alerta", [])
+                if alerts:
+                    for a in alerts:
+                        st.error(f"⚠️ {a}")
+                else:
+                    st.success("✅ Sin ingredientes sospechosos.")
 
-                        st.info(f"**Justificación:** {result.get('justificación', 'N/A')}")
-                        
-                        if result.get("advertencia"):
-                            st.warning(f"⚠️ {result.get('advertencia')}")
+            st.markdown("---")
+            st.markdown(f"**💡 Dictamen:** {result.get('justificación', 'Sin justificación')}")
+            
+            if result.get("advertencia"):
+                st.warning(f"⚠️ **Nota:** {result.get('advertencia')}")
 
 with tab2:
     st.subheader("⭐ Productos Recomendados")

@@ -116,3 +116,52 @@ class KashrutEngine:
                 "error": f"Error al parsear la respuesta: {str(e)}",
                 "estado": "Error"
             }
+
+    def analyze_text(self, text: str):
+        """
+        Analiza una lista de ingredientes en texto.
+        """
+        prompt = f"""
+        Analiza la siguiente lista de ingredientes y detalles del producto para determinar su estatus de Kashrut.
+        
+        TEXTO DEL PRODUCTO:
+        "{text}"
+        
+        Responde ÚNICAMENTE en el formato JSON especificado en las instrucciones del sistema.
+        """
+        
+        try:
+            # Try primary model first
+            response = self._try_generate_content(self.primary_model, prompt, None) # Image is None
+            
+        except Exception as e:
+             # If quota error, try fallback model
+            if self._is_quota_error(e):
+                try:
+                    response = self._try_generate_content(self.fallback_model, prompt, None, max_retries=2)
+                except Exception as fallback_error:
+                    return {
+                        "error": "Límite de cuota de API excedido.",
+                        "estado": "Error",
+                        "detalles": str(fallback_error)
+                    }
+            else:
+                 return {
+                    "error": f"Error al procesar el texto: {str(e)}",
+                    "estado": "Error"
+                }
+
+        try:
+            # Clean response
+            content = response.text.strip()
+            if content.startswith("```json"):
+                content = content[7:-3].strip()
+            elif content.startswith("```"):
+                content = content[3:-3].strip()
+                
+            return json.loads(content)
+        except Exception as e:
+            return {
+                "error": f"Error al parsear la respuesta: {str(e)}",
+                "estado": "Error"
+            }
