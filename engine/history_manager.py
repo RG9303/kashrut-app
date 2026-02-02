@@ -46,6 +46,13 @@ class HistoryManager:
         conn.commit()
         conn.close()
 
+    def delete_scan(self, scan_id):
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        c.execute('DELETE FROM scans WHERE id = ?', (scan_id,))
+        conn.commit()
+        conn.close()
+
     def get_history(self, limit=50):
         """
         Recupera los últimos escaneos.

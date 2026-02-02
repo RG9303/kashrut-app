@@ -316,8 +316,8 @@ with tab3:
                     st.write(f"**Explicación:** {item['details'].get('explicacion_halajica', 'N/A')}")
                 
                 if st.button("Eliminar", key=f"del_{item['id']}"):
-                    # Logic to delete could be added to HistoryManager
-                    pass
+                    st.session_state.history.delete_scan(item['id'])
+                    st.rerun()
 
     if st.button("Vaciar Alacena"):
         st.session_state.history.clear_history()
