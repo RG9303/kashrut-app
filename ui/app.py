@@ -32,6 +32,13 @@ if 'history' not in st.session_state:
 if 'off_client' not in st.session_state:
     st.session_state.off_client = OpenFoodFactsClient()
 
+if 'preferences' not in st.session_state:
+    st.session_state.preferences = {
+        "jalav_stam": "Permitido",
+        "pesaj_tradicion": "Sefaradí (Kitniyot OK)",
+        "rigor": "Regular"
+    }
+
 # Custom CSS for premium feel
 st.markdown("""
     <style>
@@ -98,6 +105,24 @@ st.markdown("""
         color: #f57f17;
     }
 
+    .result-card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #eee;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    
+    .status-banner {
+        padding: 30px;
+        border-radius: 20px;
+        text-align: center;
+        color: white;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+    }
+
     /* Headers */
     h1, h2, h3 {
         color: #1a237e;
@@ -124,7 +149,7 @@ cache = CacheManager()
 
 
 # Tabs for navigation
-tab1, tab2, tab3 = st.tabs(["📸 Escáner", "⭐ Recomendados", "📜 Mi Alacena"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["📸 Escáner", "⭐ Recomendados", "📜 Mi Alacena", "📚 Glosario", "👤 Perfil"])
 
 with tab1:
     col_mode1, col_mode2 = st.columns([2, 1])
@@ -182,7 +207,11 @@ with tab1:
                             
                             # 2. Análisis Final
                             extra_context = off_data.get('ingredients_text') if off_data else None
-                            result = st.session_state.engine.analyze_product(images, extra_context=extra_context)
+                            result = st.session_state.engine.analyze_product(
+                                images, 
+                                extra_context=extra_context,
+                                preferences=st.session_state.preferences
+                            )
                             
                             # 3. Guardar en Historial
                             if result and "error" not in result:
@@ -201,7 +230,10 @@ with tab1:
             if text_input:
                 with st.spinner('Analizando texto...'):
                     if 'engine' in st.session_state:
-                         result = st.session_state.engine.analyze_text(text_input)
+                         result = st.session_state.engine.analyze_text(
+                             text_input,
+                             preferences=st.session_state.preferences
+                         )
                          if result and "error" not in result:
                              st.session_state.history.add_scan(result)
                     else:
@@ -210,80 +242,85 @@ with tab1:
                 st.warning("⚠️ Por favor ingresa texto para analizar.")
 
             # Results Display (Shared)
+    # --- DISPLAY RESULTS (SHARED) ---
     if result:
+        st.markdown("<br>", unsafe_allow_html=True)
+        
         if "error" in result:
             st.error(f"❌ {result['error']}")
-            if "detalles" in result:
-                with st.expander("Ver detalles técnicos"):
-                    st.code(result["detalles"])
-            
-            if "cuota" in result["error"].lower() or "quota" in result["error"].lower():
-                st.info("💡 **Sugerencia:** Tu plan gratuito de Gemini puede haberse agotado. Intenta de nuevo en unos minutos.")
+            if "cuota" in result.get('error', '').lower():
+                st.info("💡 Sugerencia: Intenta de nuevo en unos segundos.")
         else:
-            # Display results with new JSON schema
+            # 1. Status Banner
             estado = result.get("resultado", "Dudoso")
             confianza = result.get("confianza_analisis", "N/A")
             categoria = result.get("categoria", "Desconocido")
             sello = result.get("sello_detectado", "Ninguno")
-            
-            css_class = ""
-            if "PARVE" in categoria.upper(): css_class = "kosher-parve"
-            elif "DAIRY" in categoria.upper() or "LÁCTEO" in categoria.upper(): css_class = "kosher-dairy"
-            elif "MEAT" in categoria.upper() or "CARNE" in categoria.upper(): css_class = "kosher-meat"
-            
-            if "NO KOSHER" in estado.upper(): css_class = "no-kosher"
-            elif "DUDOSO" in estado.upper() or "REVISIÓN" in estado.upper(): css_class = "dudoso"
+
+            banner_color = "#777"
+            if "KOSHER" in estado.upper() and "NO" not in estado.upper(): banner_color = "#d4af37" # Gold
+            elif "NO KOSHER" in estado.upper(): banner_color = "#c62828" # Red
+            elif "DUDOSO" in estado.upper(): banner_color = "#ffa000" # Orange
 
             st.markdown(f"""
-                <div class="status-box {css_class}">
-                    <h2 style="text-align: center; margin-bottom: 5px;">{estado}</h2>
-                    <p style="text-align: center; font-size: 1.1em; opacity: 0.8;">Confianza del Análisis: {confianza}</p>
-                    <p style="text-align: center; font-weight: bold;">Categoría: {categoria}</p>
+                <div class="status-banner" style="background: {banner_color};">
+                    <h1 style="margin:0; font-size: 3rem; font-weight: 700;">{estado.upper()}</h1>
+                    <p style="margin:10px 0 0 0; font-size: 1.2rem; opacity: 0.9;">Confianza: {confianza}</p>
                 </div>
             """, unsafe_allow_html=True)
-
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown("### 🏷️ Sello Detectado")
-                if sello and sello.lower() != "ninguno":
-                    st.success(f"✅ {sello}")
-                    # Verificación de Agencia
+            # 2. Key Metrics
+            col_res1, col_res2 = st.columns(2)
+            
+            with col_res1:
+                with st.container(border=True):
+                    st.markdown("### 🛡️ Certificación")
+                    st.write(f"**Detectado:** {sello}")
+                    # Agency Check
                     agency_data = check_agency(sello)
                     if agency_data:
-                         st.markdown(f"""
+                        st.markdown(f"""
                             <a href="{agency_data['website']}" target="_blank" style="text-decoration: none;">
                                 <div style="background-color: #f1f8e9; padding: 10px; border-radius: 8px; border: 1px solid #c5e1a5; margin-top: 5px; display: flex; align-items: center;">
                                     <span style="font-size: 1.5em; margin-right: 10px;">{agency_data['icon']}</span>
                                     <div>
-                                        <div style="font-weight: bold; color: #33691e;">Verif. : {agency_data['full_name']}</div>
-                                        <div style="font-size: 0.85em; color: #558b2f;">Click para validar ↗</div>
+                                        <div style="font-weight: bold; color: #33691e;">{agency_data['full_name']}</div>
+                                        <div style="font-size: 0.85em; color: #558b2f;">Válido e Internacional ↗</div>
                                     </div>
                                 </div>
                             </a>
                         """, unsafe_allow_html=True)
                     elif "K GENÉRICA" in sello.upper():
                          st.error("⚠️ Sello 'K' Genérico (No Confiable)")
-                    else:
+                    elif sello and sello.lower() != "ninguno":
                         st.warning(f"⚠️ Agencia '{sello}' no verificada.")
-                else:
-                    st.info("No se detectó sello de certificación.")
+                    else:
+                        st.info("No se detectó sello de certificación.")
 
-            with col2:
-                st.markdown("### 🔍 Alertas y Notas")
-                alerts = result.get("alertas", [])
-                if alerts and alerts[0].lower() != "ninguno":
-                    for a in alerts:
-                        if "insectos" in a.lower():
-                            st.error(f"🐛 {a}")
-                        elif "leche" in a.lower() or "dairy" in a.lower():
-                             st.warning(f"🥛 {a}")
-                        else:
-                            st.warning(f"⚠️ {a}")
-                else:
-                    st.success("✅ Sin alertas críticas.")
+            with col_res2:
+                with st.container(border=True):
+                    st.markdown("### 🏷️ Categoría")
+                    cat_icons = {"Parve": "🍃", "Dairy": "🥛", "Meat": "🍖", "DE": "⚙️", "Lácteo": "🥛", "Carne": "🍖"}
+                    icon = cat_icons.get(categoria, "❓")
+                    st.markdown(f"## {icon} {categoria}")
 
-            st.markdown("---")
-            st.markdown(f"**💡 Explicación Halájica:** {result.get('explicacion_halajica', 'Sin explicación disponible.')}")
+            # 3. Alertas
+            alertas = result.get('alertas', [])
+            if alertas and alertas[0].lower() != "ninguno":
+                with st.container(border=True):
+                    st.markdown("### ⚠️ Alertas Halájicas")
+                    for alerta in alertas:
+                        st.warning(alerta)
+
+            # 4. Explicación Detallada (Card)
+            st.markdown(f"""
+                <div class="result-card">
+                    <h3 style="margin-top:0;">📖 ¿Por qué este resultado?</h3>
+                    <p style="font-size: 1.1rem; line-height:1.5;">{result.get('explicacion_halajica', 'No hay explicación disponible.')}</p>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            if st.button("🔄 Nuevo Análisis"):
+                st.rerun()
 
 with tab2:
     st.subheader("⭐ Productos Recomendados")
@@ -322,6 +359,55 @@ with tab3:
     if st.button("Vaciar Alacena"):
         st.session_state.history.clear_history()
         st.rerun()
+
+with tab4:
+    st.subheader("📚 Glosario de Kashrut")
+    st.markdown("Consulta términos técnicos para entender mejor los resultados.")
+    
+    glossary_terms = {
+        "Kosher": "Apto para el consumo según la ley dietética judía (Halajá).",
+        "Parve": "Alimento neutro que no contiene carne ni leche.",
+        "DE (Dairy Equipment)": "Producto Parve procesado en equipo lácteo. Se puede comer después de carne (según la mayoría de opiniones) pero no con ella.",
+        "Jalav Stam": "Leche cuya producción no fue supervisada constantemente por un judío.",
+        "Jalav Yisrael": "Leche supervisada por un judío desde el ordeño.",
+        "Bishul Israel": "Alimentos cocinados con la participación de un judío.",
+        "Pat Israel": "Pan horneado con la participación de un judío.",
+        "Mevushal": "Vino o jugo de uva que ha sido cocinado (hervido).",
+        "Kitniyot": "Legumbres (arroz, maíz, etc.) prohibidas en Pésaj para Ashkenazim.",
+        "Glatt": "Nivel estricto de supervisión para la carne.",
+        "Jametz": "Leudado prohibido en Pésaj (trigo, cebada, etc.)."
+    }
+
+    search = st.text_input("Buscar término...", "").lower()
+    for term, definition in glossary_terms.items():
+        if search in term.lower() or search in definition.lower():
+            st.markdown(f"**{term}**: {definition}")
+
+with tab5:
+    st.subheader("👤 Tu Perfil de Kashrut")
+    st.markdown("Personaliza cómo la IA analiza tus productos.")
+    
+    with st.container(border=True):
+        st.session_state.preferences["jalav_stam"] = st.radio(
+            "¿Consumes Jalav Stam?",
+            ["Permitido", "Estricto (Solo Jalav Yisrael)"],
+            index=0 if st.session_state.preferences["jalav_stam"] == "Permitido" else 1
+        )
+        
+        st.session_state.preferences["pesaj_tradicion"] = st.selectbox(
+            "Tradición de Pésaj",
+            ["Sefaradí (Kitniyot OK)", "Ashkenazí (No Kitniyot)"],
+            index=0 if st.session_state.preferences["pesaj_tradicion"] == "Sefaradí (Kitniyot OK)" else 1
+        )
+        
+        st.session_state.preferences["rigor"] = st.select_slider(
+            "Nivel de Rigor General",
+            options=["Regular", "Medio", "Estricto"],
+            value=st.session_state.preferences["rigor"]
+        )
+        
+        if st.button("Guardar Preferencias"):
+            st.success("¡Preferencias actualizadas!")
 
 st.sidebar.markdown("---")
 st.sidebar.write("### Instrucciones")

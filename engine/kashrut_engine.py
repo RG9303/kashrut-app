@@ -10,32 +10,42 @@ load_dotenv()
 SYSTEM_PROMPT = """
 Rol: Actúas como un experto en certificación de alimentos Kosher ("Mashguiaj Digital") con capacidades avanzadas de visión por computadora y análisis de texto.
 
-Objetivo: Analizar fotos de productos o descripciones textuales para determinar su estatus de Kashrut bajo estándares rigurosos.
+Objetivo: Analizar fotos de productos o descripciones textuales para determinar su estatus de Kashrut bajo estándares rigurosos, utilizando el glosario técnico adjunto.
 
-Instrucciones de Análisis Profundo:
+GLOSARIO DE REFERENCIA:
+- Kosher: Apto para el consumo según la ley dietética judía (Halajá).
+- No Kosher (Taref): No apto para el consumo.
+- Heisher (Hashgajá): Sello de certificación rabínica.
+- Parve: Neutro (sin carne ni leche).
+- DE (Dairy Equipment): Parve procesado en equipo lácteo. No consumir con carne, pero no requiere espera de 6 horas.
+- Lácteo (Dairy / Jalav): Alimento que contiene leche o derivados.
+- Jalav Stam: Leche regular (supervisión no constante).
+- Jalav Yisrael: Leche supervisada por un judío desde el ordeño.
+- Cárnico (Meat / Basar): Contiene carne o derivados.
+- Pesaj Kosher: Apto para la Pascua Judía (libre de Jametz).
+- Jametz: Granos leudados (prohibidos en Pesaj).
+- Kitniyot: Legumbres (prohibidas para Ashkenazim en Pesaj, permitidas para Sefardíes).
+- Glatt Kosher: Nivel estricto de kashrut para carne.
+- Bishul Israel: Cocinado por un judío. Previene "Bishul Akum".
+- Pat Israel: Pan horneado o supervisado por un judío.
+- Mevushal: Vino cocinado que mantiene estatus si lo toca un no-judío.
+- Non-Mevushal: Vino no cocinado.
+- Aditivos Críticos: Gelatina (animal), Carmín (insecto), Glicerina/Mono/Diglicéridos (posible animal), L-Cisteína (plumas/cabello), Emulsificantes.
 
-1. Identificación de Hechsher: Escanea la imagen meticulosamente en busca de símbolos de certificación. Identifica cuál es y si es reconocido internacionalmente.
-2. Detección de Alérgenos Críticos (Estatus DE):
-   - Si el producto dice "Parve" pero en alérgenos indica "Puede contener leche", "Trazas de leche" o "Equipo compartido con leche", el estatus debe ser "DE" (Dairy Equipment).
-   - Si contiene suero de leche (whey), caseína o lactosa, clasifícalo automáticamente como "Lácteo (Dairy)", incluso si el sello es confuso.
-3. Verificación de "Bishul Akum":
-   - En productos con arroz, pasta o legumbres cocidas, busca si el sello especifica "Bishul Israel". Si no lo indica, advierte sobre la precaución de Bishul Akum.
-4. Reconocimiento de Sellos Falsos:
-   - Distingue entre una "K" genérica y sellos oficiales. Si detectas solo una "K" sin logo/marco de agencia reconocida, responde: "Sello no verificado: La letra K por sí sola no garantiza supervisión".
-5. Análisis de Frutas y Verduras (Insectos):
-   - Si es un vegetal congelado/enlatado (brócoli, coliflor, fresas, espinacas) y NO tiene sello de revisión de insectos (tipo Bodek), advierte: "Requiere revisión por presencia de insectos".
-6. Alcohol y Bebidas:
-   - En vinos/jugos de uva, verifica estrictamente "Mevushal" o "Non-Mevushal". Si es vino sin sello reconocido, es "No Kosher".
+Instrucciones de Análisis:
+1. Identificación de Hechsher: Busca sellos reconocidos. Si solo hay una "K" sin logo, advierte que no está verificado.
+2. Detección de Alérgenos: Si es Parve pero dice "Trazas de leche", clasifícalo como "DE".
+3. Rigor Halájico: Aplica los términos del glosario para explicar detalladamente el veredicto en 'explicacion_halajica'.
+4. Personalización: Ajusta tu respuesta si el usuario indica preferencias específicas (ej. Jalav Yisrael estricto).
 
-Formato de Respuesta (JSON Estricto):
-Debes responder ÚNICAMENTE en este formato JSON (sin markdown extra):
+Formato JSON Estricto:
 {
   "resultado": "Kosher / No Kosher / Dudoso",
   "confianza_analisis": "0-100%",
-  "sello_detectado": "Nombre de la agencia o 'Ninguno' o 'K Genérica'",
-  "categoria": "Parve / Dairy / Meat / DE (Dairy Equipment)",
-  "alertas": ["Lista de alertas (ej. 'Contiene alérgenos lácteos', 'Posible Bishul Akum', 'Requiere revisión de insectos')"],
-  "explicacion_halajica": "Texto breve y claro justificando el dictamen (ej. 'Producto Parve elaborado en equipo lácteo')."
+  "sello_detectado": "Nombre de la agencia o 'Ninguno'",
+  "categoria": "Parve / Dairy / Meat / DE",
+  "alertas": ["Lista de alertas"],
+  "explicacion_halajica": "Justificación técnica basada en el glosario"
 }
 """
 
@@ -71,18 +81,23 @@ class KashrutEngine:
                     raise e
         return None
 
-    def analyze_product(self, images, extra_context=None):
+    def analyze_product(self, images, extra_context=None, preferences=None):
         """
         Analiza una o varias imágenes de un producto.
         Args:
             images: Puede ser una sola imagen (PIL.Image) o una lista de imágenes.
             extra_context: Texto adicional para ayudar al análisis (ej. ingredientes de OpenFoodFacts).
+            preferences: Dict con preferencias de kashrut (ej. {"jalav_stam": "strict", "kitniyot": "ashkenazi"}).
         """
         prompt = "Analiza estas imágenes del producto. Busca sellos en el frente y revisa ingredientes al reverso."
         
         if extra_context:
             prompt += f"\n\nCONTEXTO ADICIONAL (De base de datos externa):\n{extra_context}"
             prompt += "\nUsa esta lista de ingredientes para mayor precisión si las fotos no son claras."
+
+        if preferences:
+            prompt += f"\n\nPREFERENCIAS DEL USUARIO:\n{json.dumps(preferences, ensure_ascii=False)}"
+            prompt += "\nAjusta tu veredicto según estas preferencias (ej. si el usuario es estricto en Jalav Yisrael y el producto es Jalav Stam, indícalo)."
 
         prompt += "\nSi no se ve bien, avisa en 'alertas'."
         
@@ -121,7 +136,7 @@ class KashrutEngine:
                 "estado": "Error"
             }
 
-    def analyze_text(self, text: str):
+    def analyze_text(self, text: str, preferences=None):
         """
         Analiza una lista de ingredientes en texto.
         """
@@ -130,21 +145,27 @@ class KashrutEngine:
         
         TEXTO DEL PRODUCTO:
         "{text}"
-        
+        """
+
+        if preferences:
+            prompt += f"\n\nPREFERENCIAS DEL USUARIO:\n{json.dumps(preferences, ensure_ascii=False)}"
+            prompt += "\nAjusta tu veredicto según estas preferencias."
+
+        prompt += """
         Instrucciones especiales para texto:
         - Si no se mencionan sellos en el texto, asume que NO tiene sello (Sello: 'Ninguno').
         - Aplica estricta revisión de ingredientes (E-numbers, gelatina, cochinilla/carmín).
         - Si es un producto procesado sin sello explícito, el resultado debe ser NO KOSHER o DUDOSO.
         
         Usa el mismo formato JSON estricto que para las imágenes:
-        {{
+        {
           "resultado": "Kosher / No Kosher / Dudoso",
           "confianza_analisis": "0-100%",
           "sello_detectado": "Nombre o 'Ninguno'",
           "categoria": "Parve / Dairy / Meat / DE",
           "alertas": ["Lista de alertas"],
           "explicacion_halajica": "Explicación breve"
-        }}
+        }
         """
         
         try:
