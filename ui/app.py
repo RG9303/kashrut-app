@@ -10,12 +10,27 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from engine.kashrut_engine import KashrutEngine
 from engine.cache_manager import CacheManager
 from engine.agency_registry import check_agency
+from engine.history_manager import HistoryManager
+from engine.off_client import OpenFoodFactsClient
 
 st.set_page_config(
     page_title="Digital Mashgiach - Kashrut Checker",
     page_icon="🛡️",
     layout="centered"
 )
+
+# Initialize components in session state
+if 'engine' not in st.session_state:
+    try:
+        st.session_state.engine = KashrutEngine()
+    except Exception as e:
+        st.error(f"Error de configuración: {e}")
+
+if 'history' not in st.session_state:
+    st.session_state.history = HistoryManager()
+
+if 'off_client' not in st.session_state:
+    st.session_state.off_client = OpenFoodFactsClient()
 
 # Custom CSS for premium feel
 st.markdown("""
@@ -109,7 +124,7 @@ cache = CacheManager()
 
 
 # Tabs for navigation
-tab1, tab2 = st.tabs(["📸 Escáner", "⭐ Recomendados"])
+tab1, tab2, tab3 = st.tabs(["📸 Escáner", "⭐ Recomendados", "📜 Mi Alacena"])
 
 with tab1:
     col_mode1, col_mode2 = st.columns([2, 1])
@@ -156,7 +171,23 @@ with tab1:
                         st.info("⚡ Respuesta instantánea (desde caché)")
                     else:
                         if 'engine' in st.session_state:
-                            result = st.session_state.engine.analyze_product(images)
+                            # 1. Intentar extraer Código de Barras
+                            barcode = st.session_state.engine.extract_barcode(images[0])
+                            off_data = None
+                            if barcode:
+                                with st.status(f"Barcode detectado: {barcode}. Consultando base de datos mundial..."):
+                                    off_data = st.session_state.off_client.get_product(barcode)
+                                    if off_data:
+                                        st.success(f"Producto encontrado: {off_data['product_name']}")
+                            
+                            # 2. Análisis Final
+                            extra_context = off_data.get('ingredients_text') if off_data else None
+                            result = st.session_state.engine.analyze_product(images, extra_context=extra_context)
+                            
+                            # 3. Guardar en Historial
+                            if result and "error" not in result:
+                                st.session_state.history.add_scan(result)
+                            
                             cache.save_to_cache(combined_bytes, result)
                         else:
                             st.error("Engine no inicializado.")
@@ -171,6 +202,8 @@ with tab1:
                 with st.spinner('Analizando texto...'):
                     if 'engine' in st.session_state:
                          result = st.session_state.engine.analyze_text(text_input)
+                         if result and "error" not in result:
+                             st.session_state.history.add_scan(result)
                     else:
                         st.error("Engine no inicializado.")
             else:
@@ -263,6 +296,32 @@ with tab2:
     st.markdown("### 🍫 Snacks")
     st.write("- Lays Clásicas - OU")
     st.write("- Pringles Original - OU")
+
+with tab3:
+    st.subheader("📜 Mi Alacena")
+    st.markdown("Revisa tus escaneos guardados.")
+    
+    history_data = st.session_state.history.get_history()
+    
+    if not history_data:
+        st.info("Aún no tienes productos en tu alacena. ¡Empieza a escanear!")
+    else:
+        for item in history_data:
+            with st.expander(f"{item['timestamp']} - {item['product_name']} ({item['status']})"):
+                col1, col2 = st.columns([1, 2])
+                with col1:
+                    st.metric("Estatus", item['status'])
+                with col2:
+                    st.write(f"**Categoría:** {item['category']}")
+                    st.write(f"**Explicación:** {item['details'].get('explicacion_halajica', 'N/A')}")
+                
+                if st.button("Eliminar", key=f"del_{item['id']}"):
+                    # Logic to delete could be added to HistoryManager
+                    pass
+
+    if st.button("Vaciar Alacena"):
+        st.session_state.history.clear_history()
+        st.rerun()
 
 st.sidebar.markdown("---")
 st.sidebar.write("### Instrucciones")

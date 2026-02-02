@@ -71,13 +71,20 @@ class KashrutEngine:
                     raise e
         return None
 
-    def analyze_product(self, images):
+    def analyze_product(self, images, extra_context=None):
         """
         Analiza una o varias imágenes de un producto.
         Args:
             images: Puede ser una sola imagen (PIL.Image) o una lista de imágenes.
+            extra_context: Texto adicional para ayudar al análisis (ej. ingredientes de OpenFoodFacts).
         """
-        prompt = "Analiza estas imágenes (frente y reverso) del producto. Busca sellos en el frente y revisa ingredientes al reverso. Si no se ve bien, avisa en 'alertas'."
+        prompt = "Analiza estas imágenes del producto. Busca sellos en el frente y revisa ingredientes al reverso."
+        
+        if extra_context:
+            prompt += f"\n\nCONTEXTO ADICIONAL (De base de datos externa):\n{extra_context}"
+            prompt += "\nUsa esta lista de ingredientes para mayor precisión si las fotos no son claras."
+
+        prompt += "\nSi no se ve bien, avisa en 'alertas'."
         
         # Ensure input is a list
         if not isinstance(images, list):
@@ -175,3 +182,20 @@ class KashrutEngine:
                 "error": f"Error al parsear la respuesta: {str(e)}",
                 "estado": "Error"
             }
+
+    def extract_barcode(self, image: Image.Image):
+        """
+        Intenta leer el código de barras numérico de una imagen usando Gemini.
+        """
+        prompt = "Identifica los dígitos del código de barras (EAN/UPC) en esta imagen. Responde SOLO con el número, sin texto extra. Si no hay código legible, responde '0'."
+        
+        try:
+            # We use flash for speed
+            response = self.primary_model.generate_content([prompt, image])
+            text = response.text.strip().replace(" ", "").replace("\n", "")
+            # Filter only digits
+            digits = "".join(filter(str.isdigit, text))
+            return digits if len(digits) > 7 else None
+        except Exception as e:
+            print(f"Error extrayendo barcode: {e}")
+            return None
