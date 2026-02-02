@@ -161,7 +161,7 @@ with tab1:
             else:
                 st.warning("⚠️ Por favor ingresa texto para analizar.")
 
-    # Results Display (Shared)
+            # Results Display (Shared)
     if result:
         if "error" in result:
             st.error(f"❌ {result['error']}")
@@ -172,63 +172,70 @@ with tab1:
             if "cuota" in result["error"].lower() or "quota" in result["error"].lower():
                 st.info("💡 **Sugerencia:** Tu plan gratuito de Gemini puede haberse agotado. Intenta de nuevo en unos minutos.")
         else:
-            # Display results in a nice UI
-            estado = result.get("estado", "Dudoso")
+            # Display results with new JSON schema
+            estado = result.get("resultado", "Dudoso")
+            confianza = result.get("confianza_analisis", "N/A")
+            categoria = result.get("categoria", "Desconocido")
+            sello = result.get("sello_detectado", "Ninguno")
+            
             css_class = ""
-            if "PARVE" in estado.upper(): css_class = "kosher-parve"
-            elif "DAIRY" in estado.upper() or "LÁCTEO" in estado.upper(): css_class = "kosher-dairy"
-            elif "MEAT" in estado.upper() or "CARNE" in estado.upper(): css_class = "kosher-meat"
-            elif "NO KOSHER" in estado.upper(): css_class = "no-kosher"
-            else: css_class = "dudoso"
+            if "PARVE" in categoria.upper(): css_class = "kosher-parve"
+            elif "DAIRY" in categoria.upper() or "LÁCTEO" in categoria.upper(): css_class = "kosher-dairy"
+            elif "MEAT" in categoria.upper() or "CARNE" in categoria.upper(): css_class = "kosher-meat"
+            
+            if "NO KOSHER" in estado.upper(): css_class = "no-kosher"
+            elif "DUDOSO" in estado.upper() or "REVISIÓN" in estado.upper(): css_class = "dudoso"
 
             st.markdown(f"""
                 <div class="status-box {css_class}">
                     <h2 style="text-align: center; margin-bottom: 5px;">{estado}</h2>
-                    <p style="text-align: center; font-size: 1.1em; opacity: 0.8;">{result.get('producto', 'Producto Detectado')}</p>
+                    <p style="text-align: center; font-size: 1.1em; opacity: 0.8;">Confianza del Análisis: {confianza}</p>
+                    <p style="text-align: center; font-weight: bold;">Categoría: {categoria}</p>
                 </div>
             """, unsafe_allow_html=True)
 
             col1, col2 = st.columns(2)
             with col1:
-                st.markdown("### 🏷️ Hechshers")
-                symbols = result.get("símbolos_encontrados", [])
-                if symbols:
-                    for s in symbols:
-                        st.success(f"✅ {s}")
-                        # Verificación de Agencia
-                        agency_data = check_agency(s)
-                        if agency_data:
-                            st.markdown(f"""
-                                <a href="{agency_data['website']}" target="_blank" style="text-decoration: none;">
-                                    <div style="background-color: #f1f8e9; padding: 10px; border-radius: 8px; border: 1px solid #c5e1a5; margin-top: 5px; display: flex; align-items: center;">
-                                        <span style="font-size: 1.5em; margin-right: 10px;">{agency_data['icon']}</span>
-                                        <div>
-                                            <div style="font-weight: bold; color: #33691e;">Verificada: {agency_data['full_name']}</div>
-                                            <div style="font-size: 0.85em; color: #558b2f;">Click para validar en sitio oficial ↗</div>
-                                        </div>
+                st.markdown("### 🏷️ Sello Detectado")
+                if sello and sello.lower() != "ninguno":
+                    st.success(f"✅ {sello}")
+                    # Verificación de Agencia
+                    agency_data = check_agency(sello)
+                    if agency_data:
+                         st.markdown(f"""
+                            <a href="{agency_data['website']}" target="_blank" style="text-decoration: none;">
+                                <div style="background-color: #f1f8e9; padding: 10px; border-radius: 8px; border: 1px solid #c5e1a5; margin-top: 5px; display: flex; align-items: center;">
+                                    <span style="font-size: 1.5em; margin-right: 10px;">{agency_data['icon']}</span>
+                                    <div>
+                                        <div style="font-weight: bold; color: #33691e;">Verif. : {agency_data['full_name']}</div>
+                                        <div style="font-size: 0.85em; color: #558b2f;">Click para validar ↗</div>
                                     </div>
-                                </a>
-                            """, unsafe_allow_html=True)
-                        else:
-                            if s.lower() != "ninguno":
-                                st.warning(f"⚠️ Agencia '{s}' no reconocida en nuestra base de datos confiable. Valida manualmente.")
+                                </div>
+                            </a>
+                        """, unsafe_allow_html=True)
+                    elif "K GENÉRICA" in sello.upper():
+                         st.error("⚠️ Sello 'K' Genérico (No Confiable)")
+                    else:
+                        st.warning(f"⚠️ Agencia '{sello}' no verificada.")
                 else:
-                    st.info("No se detectaron símbolos.")
+                    st.info("No se detectó sello de certificación.")
 
             with col2:
-                st.markdown("### 🔍 Alertas")
-                alerts = result.get("ingredientes_alerta", [])
-                if alerts:
+                st.markdown("### 🔍 Alertas y Notas")
+                alerts = result.get("alertas", [])
+                if alerts and alerts[0].lower() != "ninguno":
                     for a in alerts:
-                        st.error(f"⚠️ {a}")
+                        if "insectos" in a.lower():
+                            st.error(f"🐛 {a}")
+                        elif "leche" in a.lower() or "dairy" in a.lower():
+                             st.warning(f"🥛 {a}")
+                        else:
+                            st.warning(f"⚠️ {a}")
                 else:
-                    st.success("✅ Sin ingredientes sospechosos.")
+                    st.success("✅ Sin alertas críticas.")
 
             st.markdown("---")
-            st.markdown(f"**💡 Dictamen:** {result.get('justificación', 'Sin justificación')}")
-            
-            if result.get("advertencia"):
-                st.warning(f"⚠️ **Nota:** {result.get('advertencia')}")
+            st.markdown(f"**💡 Explicación Halájica:** {result.get('explicacion_halajica', 'Sin explicación disponible.')}")
 
 with tab2:
     st.subheader("⭐ Productos Recomendados")
