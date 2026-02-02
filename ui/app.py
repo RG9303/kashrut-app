@@ -9,6 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from engine.kashrut_engine import KashrutEngine
 from engine.cache_manager import CacheManager
+from engine.agency_registry import check_agency
 
 st.set_page_config(
     page_title="Digital Mashgiach - Kashrut Checker",
@@ -194,6 +195,23 @@ with tab1:
                 if symbols:
                     for s in symbols:
                         st.success(f"✅ {s}")
+                        # Verificación de Agencia
+                        agency_data = check_agency(s)
+                        if agency_data:
+                            st.markdown(f"""
+                                <a href="{agency_data['website']}" target="_blank" style="text-decoration: none;">
+                                    <div style="background-color: #f1f8e9; padding: 10px; border-radius: 8px; border: 1px solid #c5e1a5; margin-top: 5px; display: flex; align-items: center;">
+                                        <span style="font-size: 1.5em; margin-right: 10px;">{agency_data['icon']}</span>
+                                        <div>
+                                            <div style="font-weight: bold; color: #33691e;">Verificada: {agency_data['full_name']}</div>
+                                            <div style="font-size: 0.85em; color: #558b2f;">Click para validar en sitio oficial ↗</div>
+                                        </div>
+                                    </div>
+                                </a>
+                            """, unsafe_allow_html=True)
+                        else:
+                            if s.lower() != "ninguno":
+                                st.warning(f"⚠️ Agencia '{s}' no reconocida en nuestra base de datos confiable. Valida manualmente.")
                 else:
                     st.info("No se detectaron símbolos.")
 
