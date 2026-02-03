@@ -14,9 +14,10 @@ from engine.history_manager import HistoryManager
 from engine.off_client import OpenFoodFactsClient
 
 st.set_page_config(
-    page_title="Digital Mashgiach - Kashrut Checker",
+    page_title="KosherScan - Digital Mashgiach",
     page_icon="🛡️",
-    layout="centered"
+    layout="centered",
+    initial_sidebar_state="collapsed"
 )
 
 # Initialize components in session state
@@ -174,6 +175,14 @@ st.markdown("""
         color: white !important;
         border-bottom: 2px solid #4ade80 !important;
     }
+
+    /* White-Labeling: Hide Streamlit Branding */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    [data-testid="stHeader"] {visibility: hidden;}
+    [data-testid="stStatusWidget"] {visibility: hidden;}
+    .stDeployButton {display:none;}
     </style>
     """, unsafe_allow_html=True)
 
