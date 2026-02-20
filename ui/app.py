@@ -33,6 +33,9 @@ if 'history' not in st.session_state:
 if 'off_client' not in st.session_state:
     st.session_state.off_client = OpenFoodFactsClient()
 
+if 'cache' not in st.session_state:
+    st.session_state.cache = CacheManager()
+
 if 'preferences' not in st.session_state:
     st.session_state.preferences = {
         "jalav_stam": "Permitido",
@@ -245,13 +248,16 @@ with tab1:
                 label_visibility="collapsed"
             )
             st.markdown('</div>', unsafe_allow_html=True)
+            
+            st.markdown("<div style='margin-top: 10px; color: rgba(255,255,255,0.7); text-align: center;'>O ingresa el código de barras manualmente:</div>", unsafe_allow_html=True)
+            manual_barcode = st.text_input("Código de barras", placeholder="Ej. 75010080...", label_visibility="collapsed")
 
-        if uploaded_files:
-            images = [Image.open(file) for file in uploaded_files]
-            combined_bytes = b"".join([file.getvalue() for file in uploaded_files])
+        if uploaded_files or manual_barcode:
+            images = [Image.open(file) for file in uploaded_files] if uploaded_files else []
+            combined_bytes = b"".join([file.getvalue() for file in uploaded_files]) if uploaded_files else manual_barcode.encode()
             
             # Check cache
-            cached_result = cache.get_from_cache(combined_bytes)
+            cached_result = st.session_state.cache.get_from_cache(combined_bytes)
             if cached_result:
                 st.session_state.last_result = cached_result
                 st.rerun()
@@ -259,21 +265,36 @@ with tab1:
                 with st.spinner('Analizando...'):
                     # 1. Barcode check
                     off_data = None
-                    try:
-                        off_data = st.session_state.off_client.scan_and_get_details(images)
-                    except: pass
+                    barcode = manual_barcode if manual_barcode else None
+                    if not barcode and images:
+                        barcode = st.session_state.engine.extract_barcode(images[0])
+                    
+                    if barcode:
+                        try:
+                            off_data = st.session_state.off_client.get_product(barcode)
+                            if off_data:
+                                st.info(f"Producto de base de datos: {off_data.get('product_name')} - {off_data.get('brands')}")
+                        except Exception as e: pass
                     
                     # 2. Análisis Final
                     extra_context = off_data.get('ingredients_text') if off_data else None
-                    result = st.session_state.engine.analyze_product(
-                        images, 
-                        extra_context=extra_context,
-                        preferences=st.session_state.preferences
-                    )
+                    
+                    if extra_context and not images:
+                        # Si solo hay código de barras y proporcionó texto pero no imagenes
+                        result = st.session_state.engine.analyze_text(
+                            extra_context, 
+                            preferences=st.session_state.preferences
+                        )
+                    else:
+                        result = st.session_state.engine.analyze_product(
+                            images, 
+                            extra_context=extra_context,
+                            preferences=st.session_state.preferences
+                        )
                     
                     if result and "error" not in result:
                         st.session_state.history.add_scan(result)
-                        cache.save_to_cache(combined_bytes, result)
+                        st.session_state.cache.save_to_cache(combined_bytes, result)
                         st.session_state.last_result = result
                         st.rerun()
                     else:
@@ -327,6 +348,37 @@ with tab1:
                     </div>
                 """, unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
+
+        # Characteristics
+        caracteristicas = result.get('caracteristicas_basicas', {})
+        if caracteristicas:
+            badges_html = ""
+            if caracteristicas.get('vegano'): badges_html += "<span style='background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 12px; margin-right: 5px; font-size: 0.85rem;'>🌱 Vegano</span>"
+            if caracteristicas.get('sin_gluten'): badges_html += "<span style='background: #fef08a; color: #854d0e; padding: 4px 8px; border-radius: 12px; margin-right: 5px; font-size: 0.85rem;'>🌾 Sin Gluten</span>"
+            if caracteristicas.get('sin_lacteos'): badges_html += "<span style='background: #e0e7ff; color: #3730a3; padding: 4px 8px; border-radius: 12px; margin-right: 5px; font-size: 0.85rem;'>🥛 Sin Lácteos</span>"
+            
+            if badges_html:
+                st.markdown(f'<div class="result-card"><h3>Características Básicas</h3><div style="display: flex; flex-wrap: wrap; gap: 5px;">{badges_html}</div></div>', unsafe_allow_html=True)
+
+        # Ingredients
+        ingredientes = result.get('ingredientes_detectados', [])
+        if ingredientes:
+            ing_html = '<div class="result-card"><h3>Ingredientes Detectados</h3><ul style="list-style-type: none; padding: 0; margin: 0;">'
+            for ing in ingredientes:
+                status = ing.get('estatus', '')
+                color = "#475569" # default
+                icon = "❔"
+                if "No Kosher" in status or "Precaución" in status:
+                    color = "#ef4444"
+                    icon = "❌" if "No Kosher" in status else "⚠️"
+                elif "Kosher" in status:
+                    color = "#22c55e"
+                    icon = "✅"
+                
+                ing_html += f'<li style="padding: 6px 0; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between;"><span style="color: #334155;">{ing.get("nombre", "")}</span><span style="color: {color}; font-size: 0.85rem; font-weight: 600;">{icon} {status}</span></li>'
+            
+            ing_html += '</ul></div>'
+            st.markdown(ing_html, unsafe_allow_html=True)
 
         st.markdown(f"""
             <div class="result-card">

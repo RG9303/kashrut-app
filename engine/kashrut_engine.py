@@ -44,6 +44,8 @@ Formato JSON Estricto:
   "confianza_analisis": "0-100%",
   "sello_detectado": "Nombre de la agencia o 'Ninguno'",
   "categoria": "Parve / Dairy / Meat / DE",
+  "caracteristicas_basicas": {"vegano": true/false, "sin_gluten": true/false, "sin_lacteos": true/false},
+  "ingredientes_detectados": [{"nombre": "Ingrediente", "estatus": "Kosher/No Kosher/Dudoso/Precaución"}],
   "alertas": ["Lista de alertas"],
   "explicacion_halajica": "Justificación técnica basada en el glosario"
 }
@@ -163,6 +165,8 @@ class KashrutEngine:
           "confianza_analisis": "0-100%",
           "sello_detectado": "Nombre o 'Ninguno'",
           "categoria": "Parve / Dairy / Meat / DE",
+          "caracteristicas_basicas": {"vegano": true/false, "sin_gluten": true/false, "sin_lacteos": true/false},
+          "ingredientes_detectados": [{"nombre": "Ingrediente", "estatus": "Kosher/No Kosher/Dudoso/Precaución"}],
           "alertas": ["Lista de alertas"],
           "explicacion_halajica": "Explicación breve"
         }
