@@ -248,6 +248,57 @@ with tab1:
                 label_visibility="collapsed"
             )
             st.markdown('</div>', unsafe_allow_html=True)
+
+            # --- Pro Scanner Section ---
+            with st.expander("🔬 Pro Scanner — Detección de insectos avanzados"):
+                st.write("Usa la cámara para hacer una foto macro o sube imágenes guardadas. Ideal para frutas, verduras y cereales.")
+                pro_preset = st.selectbox("Preset de producto", ["auto", "manzana", "platano", "cereal", "custom"], index=0, key='pro_preset')
+                pro_sensitivity = st.slider("Sensibilidad (heatmap)", min_value=0, max_value=100, value=50, key='pro_sensitivity')
+                cam_img = st.camera_input("Tomar foto (cámara)")
+                pro_uploads = st.file_uploader(
+                    "O sube imágenes para análisis pro", 
+                    type=['jpg','jpeg','png','webp'],
+                    accept_multiple_files=True,
+                    key='pro_uploader'
+                )
+                colp1, colp2 = st.columns([1,1])
+                with colp1:
+                    if st.button("Analizar con Pro Scanner", key='pro_analyze'):
+                        pro_images = []
+                        if cam_img:
+                            try:
+                                pro_images.append(Image.open(cam_img))
+                            except Exception:
+                                pass
+                        if pro_uploads:
+                            for f in pro_uploads:
+                                try:
+                                    pro_images.append(Image.open(f))
+                                except Exception:
+                                    pass
+
+                        if not pro_images:
+                            st.warning("Sube o toma al menos una foto para el análisis pro.")
+                        else:
+                            with st.spinner('Analizando (Pro)...'):
+                                result = st.session_state.engine.analyze_insects(pro_images, preferences=st.session_state.preferences)
+                                if result and "error" not in result:
+                                    st.session_state.history.add_scan(result)
+                                    combined_bytes = b"".join([p.tobytes() for p in pro_uploads]) if pro_uploads else b"cam"
+                                    st.session_state.cache.save_to_cache(combined_bytes, result)
+                                    st.session_state.last_images = pro_images
+                                    # Generate heatmap with chosen preset and sensitivity
+                                    try:
+                                        heat = st.session_state.engine.generate_color_heatmap(pro_images[0], preset=pro_preset, sensitivity=pro_sensitivity)
+                                        st.session_state.last_heatmap = heat
+                                    except Exception:
+                                        st.session_state.last_heatmap = None
+                                    st.session_state.last_result = result
+                                    st.rerun()
+                                else:
+                                    st.error("Error en el análisis Pro: " + (result.get('error') if isinstance(result, dict) else str(result)))
+                with colp2:
+                    st.info("Consejos: toma fotos macro, añade una regla para escala y trata de aislar la muestra sobre fondo claro.")
             
             st.markdown("<div style='margin-top: 10px; color: rgba(255,255,255,0.7); text-align: center;'>O ingresa el código de barras manualmente:</div>", unsafe_allow_html=True)
             manual_barcode = st.text_input("Código de barras", placeholder="Ej. 75010080...", label_visibility="collapsed")
@@ -295,8 +346,15 @@ with tab1:
                     if result and "error" not in result:
                         st.session_state.history.add_scan(result)
                         st.session_state.cache.save_to_cache(combined_bytes, result)
-                        # Store result and images for the results view (for bounding box overlays)
-                        st.session_state.last_images = images if images else []
+                                # Store result and images for the results view (for bounding box overlays)
+                                st.session_state.last_images = images if images else []
+                                # Generate and store heatmap for the first image (if available)
+                                try:
+                                    if st.session_state.last_images:
+                                        heat = st.session_state.engine.generate_color_heatmap(st.session_state.last_images[0])
+                                        st.session_state.last_heatmap = heat
+                                except Exception:
+                                    st.session_state.last_heatmap = None
                         st.session_state.last_result = result
                         st.rerun()
                     else:
@@ -361,6 +419,12 @@ with tab1:
                     st.image(img, use_column_width=True)
                 except Exception:
                     pass
+
+            # Show heatmap if available
+            heat = st.session_state.get('last_heatmap')
+            if heat:
+                st.markdown('<div style="margin-top:12px;"><strong>Zona afectada (Heatmap)</strong></div>', unsafe_allow_html=True)
+                st.image(heat, use_column_width=True)
 
             for i, d in enumerate(detections):
                 st.markdown(f"""

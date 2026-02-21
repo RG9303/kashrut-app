@@ -4,6 +4,8 @@ import time
 import google.generativeai as genai
 from PIL import Image
 from dotenv import load_dotenv
+import numpy as np
+import cv2
 
 load_dotenv()
 
@@ -387,3 +389,109 @@ class KashrutEngine:
         except Exception as e:
             print(f"Error extrayendo barcode: {e}")
             return None
+
+    def analyze_insects(self, images, extra_context=None, preferences=None):
+        """
+        Análisis específico para detectar insectos en frutas, verduras y cereales.
+        Devuelve un JSON con la estructura extendida `insect_scanner` y descripciones detalladas.
+        """
+        prompt = (
+            "Analiza estas imágenes enfocándote exclusivamente en detectar insectos, fragmentos, huevos o signos de infestación "
+            "en frutas, verduras o cereales. Para cada hallazgo, proporciona: bbox, especie_aproximada (si es posible), "
+            "etapa de vida (larva, adulto, huevo), una 'descripcion_detallada' (apariencia, tamaño estimado, color), "
+            "nivel de confianza (0-100%), severidad (Alta/Media/Baja) y acción recomendada (Desechar/Inspección humana/Conservar y revisar)."
+        )
+
+        if extra_context:
+            prompt += f"\n\nCONTEXTO ADICIONAL: {extra_context}"
+
+        if preferences:
+            prompt += f"\n\nPREFERENCIAS: {json.dumps(preferences, ensure_ascii=False)}"
+
+        prompt += (
+            "\n\nEntrega la respuesta en JSON con clave principal 'insect_scanner' tal como se define en la documentación del sistema. "
+            "Si no hay insectos visibles, devuelve 'insect_scanner' con lista vacía y 'confianza_global': '0%'."
+        )
+
+        if not isinstance(images, list):
+            images = [images]
+
+        content = [prompt] + images
+
+        try:
+            response = self._try_generate_content(self.primary_model, content)
+            return self._parse_response(response)
+        except Exception as e:
+            print(f"Error en analyze_insects (primario): {e}")
+            try:
+                response = self._try_generate_content(self.fallback_model, content)
+                return self._parse_response(response)
+            except Exception as e2:
+                return {"error": f"Error en análisis de insectos: {str(e2)}"}
+
+    def generate_color_heatmap(self, pil_image: Image.Image, preset: str = 'auto', sensitivity: int = 50) -> Image.Image:
+        """
+        Genera un heatmap basándose en color y zonas afectadas.
+        - `preset`: 'auto', 'manzana', 'platano', 'cereal', 'custom'
+        - `sensitivity`: 0-100 ajusta la agresividad del detector (mayor = más sensible)
+        Devuelve una imagen PIL con el overlay del heatmap sobre la imagen original.
+        """
+        try:
+            # Convert PIL to BGR numpy
+            img_rgb = pil_image.convert('RGB')
+            img = np.array(img_rgb)[:, :, ::-1].copy()  # RGB->BGR
+
+            # Convert to HSV
+            hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+            h, s, v = cv2.split(hsv)
+
+            # Preset-based thresholds (H in degrees scaled 0-179 in OpenCV)
+            presets = {
+                'auto': {'h_low': 35, 'h_high': 85, 's_th': 60, 'v_th': 110},
+                'manzana': {'h_low': 25, 'h_high': 95, 's_th': 50, 'v_th': 110},
+                'platano': {'h_low': 15, 'h_high': 40, 's_th': 40, 'v_th': 120},
+                'cereal': {'h_low': 10, 'h_high': 40, 's_th': 40, 'v_th': 100},
+            }
+
+            cfg = presets.get(preset, presets['auto'])
+
+            # Adjust thresholds by sensitivity: sensitivity 0 -> conservative, 100 -> aggressive
+            # We'll linearly scale saturation and value thresholds
+            s_th = max(10, int(cfg['s_th'] * (1 - (sensitivity - 50) / 200)))
+            v_th = max(40, int(cfg['v_th'] * (1 - (sensitivity - 50) / 200)))
+            h_low = int(cfg['h_low'] * (1 - (sensitivity - 50) / 300))
+            h_high = int(cfg['h_high'] * (1 + (sensitivity - 50) / 300))
+
+            lower_green = max(0, h_low)
+            upper_green = min(179, h_high)
+
+            mask_not_green = (h < lower_green) | (h > upper_green)
+            mask_low_sat = s < s_th
+            mask_dark = v < v_th
+
+            damage_mask = (mask_not_green & (mask_low_sat | mask_dark)) | (mask_dark & (s < (s_th + 50)))
+
+            # Convert boolean mask to uint8
+            mask_u8 = (damage_mask.astype(np.uint8) * 255)
+
+            # Smooth mask
+            k = 21 if sensitivity >= 50 else 11
+            mask_blur = cv2.GaussianBlur(mask_u8, (k, k), 0)
+
+            # Normalize to 0-255
+            norm = cv2.normalize(mask_blur, None, 0, 255, cv2.NORM_MINMAX)
+
+            # Apply colormap
+            heatmap = cv2.applyColorMap(norm, cv2.COLORMAP_JET)
+
+            # Blend heatmap with original
+            alpha = 0.6 + (sensitivity / 250)
+            overlay = cv2.addWeighted(img, 1 - alpha, heatmap, alpha, 0)
+
+            # Convert back to PIL (RGB)
+            overlay_rgb = overlay[:, :, ::-1]
+            pil_overlay = Image.fromarray(overlay_rgb)
+            return pil_overlay
+        except Exception as e:
+            print(f"Error generando heatmap: {e}")
+            return pil_image
