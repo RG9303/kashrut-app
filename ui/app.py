@@ -346,15 +346,15 @@ with tab1:
                     if result and "error" not in result:
                         st.session_state.history.add_scan(result)
                         st.session_state.cache.save_to_cache(combined_bytes, result)
-                                # Store result and images for the results view (for bounding box overlays)
-                                st.session_state.last_images = images if images else []
-                                # Generate and store heatmap for the first image (if available)
-                                try:
-                                    if st.session_state.last_images:
-                                        heat = st.session_state.engine.generate_color_heatmap(st.session_state.last_images[0])
-                                        st.session_state.last_heatmap = heat
-                                except Exception:
-                                    st.session_state.last_heatmap = None
+                        # Store result and images for the results view (for bounding box overlays)
+                        st.session_state.last_images = images if images else []
+                        # Generate and store heatmap for the first image (if available)
+                        try:
+                            if st.session_state.last_images:
+                                heat = st.session_state.engine.generate_color_heatmap(st.session_state.last_images[0])
+                                st.session_state.last_heatmap = heat
+                        except Exception:
+                            st.session_state.last_heatmap = None
                         st.session_state.last_result = result
                         st.rerun()
                     else:
