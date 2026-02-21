@@ -224,11 +224,11 @@ with tab1:
                     <span></span>
                     <div class="inner-reticle"></div>
                 </div>
-                <h2 style="color: white; margin-top: 0; font-weight: 700; font-size: 1.8rem;">Scan Hechsher<br>or Ingredients</h2>
+                <h2 style="color: white; margin-top: 0; font-weight: 700; font-size: 1.8rem;">Escanea tu producto</h2>
                 <p style="color: rgba(255,255,255,0.7); font-size: 0.95rem; line-height: 1.5; margin-bottom: 30px;">
-                    1. Scan product front for Hechsher.<br>
-                    2. Scan back for ingredients.<br>
-                    3. Ensure clear, sharp focus.
+                    📱 Fotografía el PRODUCTO (etiqueta frontal y código de barras).<br>
+                    🔍 Asegúrate de que sea clara y enfocada.<br>
+                    ✅ Usaremos IA para detectar certificaciones y analizar ingredientes.
                 </p>
             </div>
         """, unsafe_allow_html=True)
@@ -324,7 +324,23 @@ with tab1:
                         try:
                             off_data = st.session_state.off_client.get_product(barcode)
                             if off_data:
-                                st.info(f"Producto de base de datos: {off_data.get('product_name')} - {off_data.get('brands')}")
+                                # Show product details nicely
+                                st.markdown(f"""<div class="result-card" style="background: white; padding: 16px; border-radius: 12px; margin-bottom: 12px;">
+                                    <h3 style="color: #1e293b; margin-top: 0;">📦 Producto Detectado</h3>
+                                    <div style="color: #1e293b;">
+                                        <p style="font-weight: 600; font-size: 1.1rem; margin: 8px 0;">{off_data.get('product_name', 'Desconocido')}</p>
+                                        <p style="margin: 4px 0;"><strong>Marca:</strong> {off_data.get('brands', 'N/A')}</p>
+                                        <p style="margin: 4px 0;"><strong>Cantidad:</strong> {off_data.get('quantity', 'N/A')}</p>
+                                        <p style="margin: 4px 0;"><strong>Código:</strong> {barcode}</p>
+                                    </div>
+                                </div>""", unsafe_allow_html=True)
+                                
+                                # Show ingredients if available
+                                if off_data.get('ingredients_text'):
+                                    st.markdown(f"""<div class="result-card" style="background: white; padding: 16px; border-radius: 12px; margin-bottom: 12px;">
+                                        <h3 style="color: #1e293b; margin-top: 0;">🧪 Ingredientes</h3>
+                                        <p style="color: #475569; font-size: 0.9rem; line-height: 1.4;">{off_data.get('ingredients_text')}</p>
+                                    </div>""", unsafe_allow_html=True)
                         except Exception as e: pass
                     
                     # 2. Análisis Final
