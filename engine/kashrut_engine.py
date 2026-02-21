@@ -38,6 +38,64 @@ Instrucciones de Análisis:
 3. Rigor Halájico: Aplica los términos del glosario para explicar detalladamente el veredicto en 'explicacion_halajica'.
 4. Personalización: Ajusta tu respuesta si el usuario indica preferencias específicas (ej. Jalav Yisrael estricto).
 
+ESCÁNER DE BICHOS (Detección de insectos vía imágenes):
+- Objetivo: Detectar insectos visibles, fragmentos, huevos o restos macroscópicos que puedan afectar el estatus de Kashrut.
+- Requisitos de salida: Si el análisis proviene de imágenes, incluye una clave `insect_scanner` en el JSON con la estructura:
+    {
+        "detecciones": [{"bbox": [x,y,w,h], "descripcion": "fragmento/whole_insect/egg", "especie_aproximada": "ej. 'ácaro'/'polilla'/'otros' or 'desconocido'", "confianza": "0-100%", "severidad": "Alta/Media/Baja", "accion_recomendada": "Desechar/Inspección humana/Conservar y revisar"}],
+        "resumen": "Texto corto sobre presencia de insectos o fragmentos",
+        "confianza_global": "0-100%",
+        "nota_falsos_positivos": "Ejemplos comunes de falsos positivos: semillas, granos, pigmentos, especias"
+    }
+
+- Lógica de decisión mínima:
+    - Si se detecta un insecto entero o múltiples fragmentos con confianza >=90% -> marcar como `No Kosher` y `alertas` debe incluir "Insectos visibles - requiere descarte o inspección".
+    - Si hay detección con confianza 70-89% -> marcar como `Dudoso` y recomendar "Inspección humana especializada".
+    - Si confianza <70% -> etiquetar detección como "Baja confianza" y pedir imágenes de mayor resolución/macro.
+
+- Guía de captura de imágenes para el escáner de bichos:
+    - Tomar foto macro (si es posible) con iluminación uniforme y fondo neutro.
+    - Incluir una referencia de escala (regla) y varias tomas desde distintos ángulos.
+    - Fotografiar el contenido externo y el empaque abierto si procede.
+
+- Consideraciones para evitar falsos positivos: comparar la textura y reflectancia, pedir crops (recortes) del área sospechosa, y contrastar con la lista de ingredientes (semillas/especias que se confunden frecuentemente).
+
+RECOMENDACIONES FUNCIONALES (para la app):
+- Interfaz y flujo:
+    - Mostrar bounding boxes y una barra de `confianza` por detección; permitir que el usuario marque manualmente como "confirmado" o "falso positivo".
+    - Botón para "Solicitar revisión por Mashgiach" que envía imágenes, recortes y metadata (timestamp, user id) a un buzón de revisión.
+    - Historial de casos con exportación a PDF con evidencia visual y veredicto.
+
+- Pipeline y modelos:
+    - Usar un ensemble: modelo de detección de objetos (insectos/fragmentos) + detector de anomalías de textura y un clasificador especializado.
+    - Permitir subida de crop de alta resolución a un modelo especializado offline/servidor.
+    - Mantener un fallback local ligero para chequeos rápidos sin conexión.
+
+- Ajustes y QA:
+    - Permitir niveles de rigurosidad (ej. `estándar`, `estricto`, `experimental`) que ajusten umbrales de confianza.
+    - Registrar métricas (precision/recall, falsos positivos/negativos) y permitir re-etiquetado para aprendizaje activo.
+
+- Datos y privacidad:
+    - Pedir consentimiento para almacenar imágenes; almacenar metadatos de forma segura para auditoría rabínica.
+
+- Integraciones útiles:
+    - Búsqueda por código de barras + coincidencia en bases (OpenFoodFacts) para validar ingredientes.
+    - Pasarela para exportar casos a un sistema de certificación rabínica externo.
+
+Formato JSON Estricto (actualizado):
+{
+    "resultado": "Kosher / No Kosher / Dudoso",
+    "confianza_analisis": "0-100%",
+    "sello_detectado": "Nombre de la agencia o 'Ninguno'",
+    "categoria": "Parve / Dairy / Meat / DE",
+    "caracteristicas_basicas": {"vegano": true/false, "sin_gluten": true/false, "sin_lacteos": true/false},
+    "ingredientes_detectados": [{"nombre": "Ingrediente", "estatus": "Kosher/No Kosher/Dudoso/Precaución"}],
+    "alertas": ["Lista de alertas"],
+    "insect_scanner": {"detecciones": [{"bbox": [x,y,w,h], "descripcion": "", "especie_aproximada": "", "confianza": "0-100%", "severidad": "", "accion_recomendada": ""}], "resumen": "", "confianza_global": "0-100%", "nota_falsos_positivos": ""},
+    "recomendaciones_funcionales": ["Lista corta de recomendaciones técnicas y de UX"],
+    "explicacion_halajica": "Justificación técnica basada en el glosario"
+}
+
 Formato JSON Estricto:
 {
   "resultado": "Kosher / No Kosher / Dudoso",
@@ -131,12 +189,117 @@ class KashrutEngine:
             elif content.startswith("```"):
                 content = content[3:-3].strip()
                 
-            return json.loads(content)
+            parsed = json.loads(content)
+            # Normalizar campo `insect_scanner` si existe
+            try:
+                parsed = self.normalize_insect_scanner(parsed)
+            except Exception:
+                # No fallar por normalización; devolver raw si algo va mal
+                pass
+
+            return parsed
         except Exception as e:
             return {
                 "error": f"Error al parsear la respuesta: {str(e)}",
                 "estado": "Error"
             }
+
+    @staticmethod
+    def normalize_insect_scanner(parsed_result: dict) -> dict:
+        """
+        Normaliza y valida la estructura `insect_scanner` dentro del resultado generado.
+        - Asegura tipos: bbox como ints, confianza como int 0-100, severidad normalizada.
+        - Rellena campos faltantes y valida acciones recomendadas.
+        - No lanza excepciones en caso de entrada inesperada; devuelve el dict original o enriquecido.
+        """
+        if not isinstance(parsed_result, dict):
+            return parsed_result
+
+        isc = parsed_result.get('insect_scanner')
+        if not isc or not isinstance(isc, dict):
+            # Garantizar estructura mínima
+            parsed_result['insect_scanner'] = {
+                'detecciones': [],
+                'resumen': '',
+                'confianza_global': '0%',
+                'nota_falsos_positivos': ''
+            }
+            return parsed_result
+
+        detecciones = isc.get('detecciones', [])
+        norm_detecciones = []
+        for d in detecciones:
+            try:
+                bbox = d.get('bbox', [0, 0, 0, 0])
+                # Convertir a ints y asegurar longitud 4
+                bbox = [int(round(float(x))) for x in (bbox[:4] + [0, 0, 0, 0])[:4]]
+
+                descripcion = d.get('descripcion', '') or ''
+                especie = d.get('especie_aproximada', '') or 'desconocido'
+
+                # Normalizar confianza
+                conf_raw = d.get('confianza', 0)
+                if isinstance(conf_raw, str):
+                    conf_raw = conf_raw.replace('%', '').strip()
+                try:
+                    confianza = int(max(0, min(100, int(float(conf_raw)))))
+                except Exception:
+                    confianza = 0
+
+                # Severidad mapping
+                sev = (d.get('severidad') or '').lower()
+                if sev in ['alta', 'high']:
+                    severidad = 'Alta'
+                elif sev in ['media', 'medium', 'med']:
+                    severidad = 'Media'
+                elif sev in ['baja', 'low']:
+                    severidad = 'Baja'
+                else:
+                    # Inferir por confianza
+                    if confianza >= 90:
+                        severidad = 'Alta'
+                    elif confianza >= 70:
+                        severidad = 'Media'
+                    else:
+                        severidad = 'Baja'
+
+                # Acción recomendada validación
+                accion = (d.get('accion_recomendada') or '').strip()
+                valid_actions = ['Desechar', 'Inspección humana', 'Conservar y revisar', 'Inspección humana especializada']
+                if accion not in valid_actions:
+                    # Inferir acción por severidad
+                    if severidad == 'Alta':
+                        accion = 'Desechar'
+                    elif severidad == 'Media':
+                        accion = 'Inspección humana especializada'
+                    else:
+                        accion = 'Conservar y revisar'
+
+                norm_detecciones.append({
+                    'bbox': bbox,
+                    'descripcion': descripcion,
+                    'especie_aproximada': especie,
+                    'confianza': f"{confianza}%",
+                    'severidad': severidad,
+                    'accion_recomendada': accion
+                })
+            except Exception:
+                # Omitir detección inválida
+                continue
+
+        # Confianza global: promedio de detecciones
+        if norm_detecciones:
+            total = 0
+            for nd in norm_detecciones:
+                total += int(str(nd.get('confianza', '0%')).replace('%', ''))
+            confianza_global = int(total / len(norm_detecciones))
+            isc['confianza_global'] = f"{confianza_global}%"
+        else:
+            isc['confianza_global'] = '0%'
+
+        isc['detecciones'] = norm_detecciones
+        parsed_result['insect_scanner'] = isc
+        return parsed_result
 
     def analyze_text(self, text: str, preferences=None):
         """

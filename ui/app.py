@@ -295,6 +295,8 @@ with tab1:
                     if result and "error" not in result:
                         st.session_state.history.add_scan(result)
                         st.session_state.cache.save_to_cache(combined_bytes, result)
+                        # Store result and images for the results view (for bounding box overlays)
+                        st.session_state.last_images = images if images else []
                         st.session_state.last_result = result
                         st.rerun()
                     else:
@@ -337,6 +339,51 @@ with tab1:
                 </div>
             </div>
         """, unsafe_allow_html=True)
+
+        # Insect scanner display (if present)
+        isc = result.get('insect_scanner', {})
+        detections = isc.get('detecciones', []) if isinstance(isc, dict) else []
+        if detections:
+            st.markdown('<div class="result-card"><h3>Insect Scanner Detections</h3>', unsafe_allow_html=True)
+            # If we have an image, draw boxes over first image
+            imgs = st.session_state.get('last_images', [])
+            if imgs:
+                try:
+                    from PIL import ImageDraw
+                    img = imgs[0].convert('RGB')
+                    draw = ImageDraw.Draw(img)
+                    w, h = img.size
+                    for det in detections:
+                        bbox = det.get('bbox', [0,0,0,0])
+                        x, y, bw, bh = bbox
+                        # Draw rectangle
+                        draw.rectangle([x, y, x+bw, y+bh], outline=(255,0,0), width=3)
+                    st.image(img, use_column_width=True)
+                except Exception:
+                    pass
+
+            for i, d in enumerate(detections):
+                st.markdown(f"""
+                    <div style='display:flex; justify-content:space-between; align-items:center; padding:8px 0;'>
+                        <div>
+                            <strong>Detección #{i+1}</strong><br>
+                            <small>{d.get('descripcion','')} — {d.get('especie_aproximada','')}</small>
+                        </div>
+                        <div style='text-align:right;'>
+                            <div style='font-weight:700'>{d.get('confianza','')}</div>
+                            <div style='font-size:0.85rem; color:#64748b'>{d.get('severidad','')}</div>
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+            # Review button
+            if st.button("Solicitar revisión por Mashgiach"):
+                review_payload = result.copy()
+                review_payload['review_requested'] = True
+                st.session_state.history.add_scan(review_payload)
+                st.success("Solicitud de revisión enviada. Un Mashgiach la revisará.")
+
+            st.markdown('</div>', unsafe_allow_html=True)
 
         alertas = result.get('alertas', [])
         if alertas and alertas[0].lower() != "ninguno":
