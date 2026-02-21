@@ -4,8 +4,15 @@ import time
 import google.generativeai as genai
 from PIL import Image
 from dotenv import load_dotenv
-import numpy as np
-import cv2
+
+try:
+    import numpy as np
+    import cv2
+    HAS_CV2 = True
+except ImportError:
+    HAS_CV2 = False
+    np = None
+    cv2 = None
 
 load_dotenv()
 
@@ -436,6 +443,10 @@ class KashrutEngine:
         - `sensitivity`: 0-100 ajusta la agresividad del detector (mayor = más sensible)
         Devuelve una imagen PIL con el overlay del heatmap sobre la imagen original.
         """
+        if not HAS_CV2:
+            # Fallback: si no hay cv2, devolver imagen sin procesamiento
+            return pil_image
+
         try:
             # Convert PIL to BGR numpy
             img_rgb = pil_image.convert('RGB')
