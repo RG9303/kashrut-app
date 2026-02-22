@@ -5,6 +5,8 @@ export default function App(){
   const [dataUrl, setDataUrl] = useState(null)
   const [result, setResult] = useState(null)
 
+  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
+
   const onCaptured = async (durl) => {
     setDataUrl(durl)
     // POST to API
@@ -12,7 +14,7 @@ export default function App(){
       const blob = await (await fetch(durl)).blob()
       const fd = new FormData()
       fd.append('files', blob, 'capture.png')
-      const res = await fetch('http://localhost:8000/analyze_insects', { method: 'POST', body: fd })
+      const res = await fetch(`${API_BASE}/analyze_insects`, { method: 'POST', body: fd })
       const json = await res.json()
       setResult(json)
     }catch(e){
