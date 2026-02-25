@@ -45,7 +45,10 @@ Instrucciones de Análisis:
 1. Identificación de Hechsher: Busca sellos reconocidos. Si solo hay una "K" sin logo, advierte que no está verificado.
 2. Detección de Alérgenos: Si es Parve pero dice "Trazas de leche", clasifícalo como "DE".
 3. Rigor Halájico: Aplica los términos del glosario para explicar detalladamente el veredicto en 'explicacion_halajica'.
-4. Personalización: Ajusta tu respuesta si el usuario indica preferencias específicas (ej. Jalav Yisrael estricto).
+4. Personalización y Perfil del Usuario:
+    - Ajusta tu respuesta si el usuario indica preferencias específicas (ej. Jalav Yisrael estricto).
+    - Considera el origen del usuario (Ashkenazi o Sefaradí) ya que afecta leyes como el Kitniyot en Pesaj, o la revisión de la leche (Jalav Yisrael vs Jalav Stam).
+    - Considera el País proporcionado para buscar ingredientes locales permitidos o alertas de Kashrut específicas de esa región. Menciónalo en la explicación halájica si es relevante.
 
 ESCÁNER DE BICHOS (Detección de insectos vía imágenes):
 - Objetivo: Detectar insectos visibles, fragmentos, huevos o restos macroscópicos que puedan afectar el estatus de Kashrut.

@@ -16,6 +16,10 @@ export default function Home() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [barcode, setBarcode] = useState('');
 
+  // User Profile State
+  const [userOrigin, setUserOrigin] = useState('ashkenazi');
+  const [userCountry, setUserCountry] = useState('México');
+
   // Start Camera Stream
   const startCamera = async () => {
     try {
@@ -111,6 +115,13 @@ export default function Home() {
       alert("Proporciona una imagen o un código de barras");
       return;
     }
+
+    // Attached User Profile Preferences
+    const preferences = {
+      origen: userOrigin,
+      pais: userCountry
+    };
+    formData.append('preferences', JSON.stringify(preferences));
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/scan';
@@ -283,6 +294,39 @@ export default function Home() {
                 Buscar
               </button>
             </form>
+          </div>
+
+          {/* Configuración de Perfil (Ashkenazi/Sefaradí, País) */}
+          <div className="w-full flex items-center justify-between gap-4 mt-2 p-4 bg-slate-900/50 rounded-2xl border border-slate-700/50">
+            <div className="flex flex-col flex-1">
+              <label className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Costumbre</label>
+              <select
+                value={userOrigin}
+                onChange={(e) => setUserOrigin(e.target.value)}
+                className="bg-transparent text-white font-medium focus:outline-none appearance-none cursor-pointer"
+              >
+                <option value="ashkenazi" className="bg-slate-800">Ashkenazí</option>
+                <option value="sefaradi" className="bg-slate-800">Sefaradí</option>
+              </select>
+            </div>
+
+            <div className="w-px h-8 bg-slate-700"></div>
+
+            <div className="flex flex-col flex-1 pl-2">
+              <label className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">País</label>
+              <select
+                value={userCountry}
+                onChange={(e) => setUserCountry(e.target.value)}
+                className="bg-transparent text-white font-medium focus:outline-none appearance-none cursor-pointer"
+              >
+                <option value="México" className="bg-slate-800">México</option>
+                <option value="Estados Unidos" className="bg-slate-800">Estados Unidos</option>
+                <option value="Argentina" className="bg-slate-800">Argentina</option>
+                <option value="Israel" className="bg-slate-800">Israel</option>
+                <option value="España" className="bg-slate-800">España</option>
+                <option value="Otro" className="bg-slate-800">Otro País</option>
+              </select>
+            </div>
           </div>
 
           {/* Disclaimer Node */}
