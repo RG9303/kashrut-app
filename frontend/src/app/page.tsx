@@ -1,0 +1,455 @@
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+import { Camera, Upload, AlertCircle, CheckCircle2, Smartphone, Focus, Leaf, Droplets, Beef, ShieldAlert, Wheat, ShieldQuestion, QrCode, XCircle } from 'lucide-react';
+
+export default function Home() {
+  const [isScanning, setIsScanning] = useState(false);
+  const [result, setResult] = useState<any>(null);
+
+  // Camera State
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // File & Barcode State
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [barcode, setBarcode] = useState('');
+
+  // Start Camera Stream
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' } // Prefer back camera on mobile
+      });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        setIsCameraActive(true);
+      }
+    } catch (err) {
+      console.error("Error accessing camera:", err);
+      alert("No se pudo acceder a la cámara. Por favor permite el acceso o usa la opción de subir foto.");
+    }
+  };
+
+  // Stop Camera Stream
+  const stopCamera = () => {
+    if (videoRef.current?.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+      setIsCameraActive(false);
+    }
+  };
+
+  // Cleanup camera on unmount
+  useEffect(() => {
+    return () => stopCamera();
+  }, []);
+
+  const dataURLtoBlob = (dataurl: string) => {
+    let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)![1],
+      bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mime });
+  }
+
+  // Handle Photo Capture
+  const takePhotoAndScan = async () => {
+    if (!videoRef.current || !canvasRef.current) return;
+
+    // Draw video frame to canvas
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Get image blob
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+    const blob = dataURLtoBlob(dataUrl);
+
+    // Proceed to scan
+    await executeScan(blob);
+  };
+
+  // Handle File Upload
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length) return;
+    await executeScan(e.target.files[0]);
+  };
+
+  // Handle Barcode only submission
+  const handleBarcodeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!barcode.trim()) return;
+    await executeScan(null, barcode);
+  };
+
+  // Main API Call
+  const executeScan = async (imageFile: Blob | File | null, barcodeStr: string = '') => {
+    setIsScanning(true);
+    setResult(null); // Clear previous
+
+    const formData = new FormData();
+    if (imageFile) {
+      formData.append('images', imageFile, 'capture.jpg');
+    }
+    // Only send barcode if it's explicitly set or typed
+    const finalBarcode = barcodeStr || barcode;
+    if (finalBarcode) {
+      formData.append('barcode', finalBarcode);
+    }
+
+    // Must have at least one to prevent 400 bad request error from API
+    if (!imageFile && !finalBarcode) {
+      setIsScanning(false);
+      alert("Proporciona una imagen o un código de barras");
+      return;
+    }
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/scan';
+      const res = await fetch(apiUrl, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.detail || "Error en el servidor");
+      }
+
+      const data = await res.json();
+      setResult(data);
+      if (isCameraActive) stopCamera(); // optionally stop camera when done
+    } catch (error: any) {
+      console.error('Scan failed:', error);
+      alert('Error: ' + error.message);
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  return (
+    <main className="flex min-h-screen flex-col lg:flex-row p-4 lg:p-10 gap-8 max-w-[1400px] mx-auto relative">
+
+      {/* LEFT COLUMN: Scanner / Input */}
+      <div className="flex-1 w-full max-w-lg mx-auto lg:max-w-none flex flex-col h-full lg:sticky lg:top-10">
+
+        <header className="w-full flex justify-between items-center mb-8">
+          <button className="text-2xl text-slate-300 hover:text-white transition">☰</button>
+          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+            KosherScan
+          </h1>
+          <button className="text-2xl text-slate-300 hover:text-white transition">⚙️</button>
+        </header>
+
+        <div className="w-full bg-slate-800/80 border border-slate-700/50 rounded-[2.5rem] p-8 lg:p-12 backdrop-blur-xl shadow-2xl flex flex-col items-center flex-grow">
+
+          <h2 className="text-3xl font-bold mt-2 mb-2 tracking-tight text-white text-center">Analizar Producto</h2>
+
+          <div className="flex flex-col gap-2 mt-4 mb-8 text-slate-400 text-sm">
+            <div className="flex items-center justify-center gap-2">
+              <Smartphone className="w-4 h-4 text-emerald-400" />
+              <span>Fotografía el producto o ingresa su código</span>
+            </div>
+            <div className="flex items-center justify-center gap-2">
+              <Focus className="w-4 h-4 text-emerald-400" />
+              <span>Asegúrate de que etiquetas sean legibles</span>
+            </div>
+          </div>
+
+          {/* Scanner Viewport */}
+          <div className="relative w-full aspect-square max-w-[320px] rounded-3xl overflow-hidden bg-slate-900 border-2 border-slate-700/50 my-4 flex justify-center items-center group shadow-inner">
+
+            {/* Camera feed */}
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className={`absolute inset-0 w-full h-full object-cover z-10 ${isCameraActive ? 'opacity-100' : 'opacity-0'}`}
+            />
+            <canvas ref={canvasRef} className="hidden" />
+
+            {/* Offline Animation (when camera is off) */}
+            {!isCameraActive && (
+              <>
+                <div className="absolute inset-0 bg-emerald-500/5 rounded-full blur-3xl animate-pulse"></div>
+                {/* Corners */}
+                <div className="absolute top-4 left-4 w-10 h-10 border-t-4 border-l-4 border-slate-500 rounded-tl-2xl transition-all group-hover:border-emerald-500"></div>
+                <div className="absolute top-4 right-4 w-10 h-10 border-t-4 border-r-4 border-slate-500 rounded-tr-2xl transition-all group-hover:border-emerald-500"></div>
+                <div className="absolute bottom-4 left-4 w-10 h-10 border-b-4 border-l-4 border-slate-500 rounded-bl-2xl transition-all group-hover:border-emerald-500"></div>
+                <div className="absolute bottom-4 right-4 w-10 h-10 border-b-4 border-r-4 border-slate-500 rounded-br-2xl transition-all group-hover:border-emerald-500"></div>
+                {/* Inner dash */}
+                <div className="w-16 h-16 border-2 border-dashed border-slate-600 rounded-full animate-[spin_10s_linear_infinite]"></div>
+              </>
+            )}
+
+            {/* Scanning Overlay overlays on top of everything */}
+            {isScanning && (
+              <div className="absolute inset-0 bg-emerald-900/40 backdrop-blur-md flex flex-col items-center justify-center z-20">
+                <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <span className="font-bold animate-pulse text-emerald-100 drop-shadow-lg text-lg">Analizando IA...</span>
+              </div>
+            )}
+
+            {/* Active Camera Overlay */}
+            {isCameraActive && !isScanning && (
+              <>
+                <div className="absolute top-4 left-4 w-10 h-10 border-t-4 border-l-4 border-emerald-400 rounded-tl-2xl z-10 shadow-[0_0_15px_rgba(16,185,129,0.5)]"></div>
+                <div className="absolute top-4 right-4 w-10 h-10 border-t-4 border-r-4 border-emerald-400 rounded-tr-2xl z-10 shadow-[0_0_15px_rgba(16,185,129,0.5)]"></div>
+                <div className="absolute bottom-4 left-4 w-10 h-10 border-b-4 border-l-4 border-emerald-400 rounded-bl-2xl z-10 shadow-[0_0_15px_rgba(16,185,129,0.5)]"></div>
+                <div className="absolute bottom-4 right-4 w-10 h-10 border-b-4 border-r-4 border-emerald-400 rounded-br-2xl z-10 shadow-[0_0_15px_rgba(16,185,129,0.5)]"></div>
+              </>
+            )}
+          </div>
+
+          <div className="w-full flex gap-3 mt-6">
+            {!isCameraActive ? (
+              <button
+                onClick={startCamera}
+                disabled={isScanning}
+                className="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-semibold py-4 rounded-2xl shadow-[0_8px_25px_rgba(16,185,129,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"
+              >
+                <Camera className="w-5 h-5" /> Activar Cámara
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={stopCamera}
+                  disabled={isScanning}
+                  className="bg-slate-700 hover:bg-slate-600 text-white font-semibold px-5 py-4 rounded-2xl transition-all active:scale-95 flex items-center justify-center"
+                  title="Detener Cámara"
+                >
+                  <XCircle className="w-6 h-6" />
+                </button>
+                <button
+                  onClick={takePhotoAndScan}
+                  disabled={isScanning}
+                  className="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-[0_8px_25px_rgba(16,185,129,0.3)] hover:brightness-110 text-white font-bold py-4 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 text-lg"
+                >
+                  <Camera className="w-6 h-6" /> Capturar
+                </button>
+              </>
+            )}
+          </div>
+
+          <div className="w-full flex items-center gap-4 my-6 opacity-50">
+            <div className="h-px bg-slate-500 flex-1"></div>
+            <span className="text-sm font-medium uppercase tracking-wider text-slate-300">O Alternativas</span>
+            <div className="h-px bg-slate-500 flex-1"></div>
+          </div>
+
+          <div className="w-full flex flex-col gap-4">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              accept="image/*"
+              className="hidden"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isScanning}
+              className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2"
+            >
+              <Upload className="w-5 h-5 opacity-70" /> Subir desde Galería
+            </button>
+
+            <form onSubmit={handleBarcodeSubmit} className="flex gap-2">
+              <div className="relative flex-1">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <QrCode className="h-5 w-5 text-slate-400" />
+                </div>
+                <input
+                  type="text"
+                  value={barcode}
+                  onChange={(e) => setBarcode(e.target.value)}
+                  placeholder="Insertar Código Barras (EAN/UPC)"
+                  className="w-full bg-slate-900 border border-slate-700 text-white rounded-2xl py-3.5 pl-10 pr-4 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isScanning || !barcode.trim()}
+                className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:hover:bg-emerald-600 text-white font-semibold px-6 py-3.5 rounded-2xl transition-all active:scale-95 flex items-center justify-center"
+              >
+                Buscar
+              </button>
+            </form>
+          </div>
+
+          {/* Disclaimer Node */}
+          <div className="mt-8 pt-5 border-t border-slate-700 flex items-start gap-3 w-full opacity-70">
+            <ShieldQuestion className="w-5 h-5 text-emerald-500/80 flex-shrink-0 mt-0.5" />
+            <p className="text-[11px] text-slate-300 leading-relaxed">
+              <strong>Nota importante:</strong> Este análisis de inteligencia artificial es una herramienta de asistencia tecnológica de referencia. <strong>No sustituye de ninguna manera el dictamen ni la revisión de una autoridad rabínica competente.</strong> En caso de duda sobre la Kashrut de un ingrediente o producto, consulte siempre a su Mashgiach o Rabino experto de confianza.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* RIGHT COLUMN: Results */}
+      <div className="flex-1 w-full max-w-lg mx-auto lg:max-w-none h-full min-h-[500px]">
+        {result ? (
+          <ResultView result={result} onBack={() => setResult(null)} />
+        ) : (
+          <div className="h-full min-h-[600px] flex flex-col items-center justify-center border-2 border-dashed border-slate-700/50 bg-slate-800/20 rounded-[2.5rem] p-12 text-slate-500">
+            <div className="w-24 h-24 mb-6 rounded-full bg-slate-800/50 flex items-center justify-center">
+              <Leaf className="w-10 h-10 opacity-30" />
+            </div>
+            <h3 className="text-xl font-medium text-slate-400 mb-2 text-center">Esperando Análisis</h3>
+            <p className="text-sm text-center max-w-xs text-slate-500">
+              Escanea un producto con la cámara de la izquierda o introduce su código de barras para desglosar el resultado aquí.
+            </p>
+          </div>
+        )}
+      </div>
+    </main>
+  );
+}
+
+function ResultView({ result, onBack }: { result: any, onBack: () => void }) {
+  const status = result.resultado?.toUpperCase() || 'DUDOSO';
+  const isKosher = status.includes('KOSHER') && !status.includes('NO');
+
+  return (
+    <div className="w-full flex-col flex gap-4 animate-in fade-in slide-in-from-bottom-8 duration-500">
+
+      {/* Dynamic Status Header */}
+      <div className={`w-full p-8 rounded-[2.5rem] shadow-xl flex flex-col justify-center text-white relative overflow-hidden
+        ${isKosher ? 'bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-emerald-500/20' : 'bg-gradient-to-br from-rose-500 to-rose-700 shadow-rose-500/20'}`}>
+
+        {/* Background decorative icon */}
+        <div className="absolute -right-6 -bottom-6 opacity-10 pointer-events-none">
+          {isKosher ? <CheckCircle2 className="w-48 h-48" /> : <ShieldAlert className="w-48 h-48" />}
+        </div>
+
+        <div className="flex flex-col relative z-10">
+          <span className="text-sm font-semibold uppercase tracking-widest opacity-80 mb-1">Estatus Final</span>
+          <div className="flex items-center gap-3 text-4xl font-black tracking-tight drop-shadow-md">
+            {isKosher ? <CheckCircle2 className="w-10 h-10" /> : <ShieldAlert className="w-10 h-10" />}
+            {status}
+          </div>
+          <div className="mt-4 inline-flex backdrop-blur-md bg-white/20 px-3 py-1.5 rounded-xl text-white/90 font-medium text-sm w-max border border-white/20">
+            Certeza IA: {result.confianza_analisis || 'N/A'}
+          </div>
+        </div>
+      </div>
+
+      <div className="w-full flex flex-col gap-5 mt-2">
+
+        {/* Basic Grid Info */}
+        <div className="grid grid-cols-2 gap-4">
+          {/* Seal Card */}
+          <div className="bg-slate-800/80 p-6 rounded-3xl shadow-lg border border-slate-700/50 backdrop-blur-xl">
+            <span className="text-slate-400 font-semibold text-xs uppercase tracking-wider mb-2 block">Sello</span>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center font-black text-xl border border-emerald-500/20 shadow-inner">
+                {result.sello_detectado?.substring(0, 2).toUpperCase() || '??'}
+              </div>
+              <div className="font-bold text-lg text-white leading-tight">
+                {result.sello_detectado || 'Ninguno'}
+              </div>
+            </div>
+          </div>
+
+          {/* Category Card */}
+          <div className="bg-slate-800/80 p-6 rounded-3xl shadow-lg border border-slate-700/50 backdrop-blur-xl">
+            <span className="text-slate-400 font-semibold text-xs uppercase tracking-wider mb-2 block">Categoría</span>
+            <div className="flex items-center gap-3 text-lg font-bold text-white leading-tight">
+              <span className="text-emerald-400 bg-emerald-500/10 p-2.5 rounded-2xl border border-emerald-500/20">
+                {result.categoria?.includes('Parve') ? <Leaf className="w-6 h-6" /> :
+                  result.categoria?.includes('Lácteo') ? <Droplets className="w-6 h-6 text-blue-400" /> :
+                    <Beef className="w-6 h-6 text-rose-400" />}
+              </span>
+              {result.categoria || 'Parve'}
+            </div>
+          </div>
+        </div>
+
+        {/* Product Meta (if from API) */}
+        {result.off_data && (
+          <div className="bg-slate-800/80 p-6 rounded-3xl shadow-lg border border-slate-700/50 backdrop-blur-xl">
+            <h3 className="text-white font-bold text-lg mb-4 flex items-center gap-2 border-b border-slate-700 pb-3">
+              <QrCode className="w-5 h-5 text-indigo-400" /> Registro OpenFoodFacts
+            </h3>
+            <div className="flex flex-col gap-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-slate-400">Producto</span>
+                <span className="text-white font-medium text-right">{result.off_data.product_name || 'Desconocido'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Marca</span>
+                <span className="text-white font-medium text-right">{result.off_data.brands || 'N/A'}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Alerts */}
+        {result.alertas && result.alertas.length > 0 && result.alertas[0] !== "Ninguno" && (
+          <div className="bg-amber-900/20 p-6 rounded-3xl shadow-lg border border-amber-700/30 backdrop-blur-xl">
+            <h3 className="text-amber-400 font-bold text-lg mb-4 flex items-center gap-2">
+              <ShieldAlert className="w-5 h-5" /> Alertas Relevantes
+            </h3>
+            <div className="flex flex-col gap-3">
+              {result.alertas.map((alerta: string, i: number) => (
+                <div key={i} className="flex gap-3 text-amber-200 bg-amber-950/40 p-4 rounded-2xl border border-amber-800/30">
+                  <ShieldAlert className="w-5 h-5 flex-shrink-0 mt-0.5 text-amber-500" />
+                  <span className="text-sm font-medium leading-relaxed">{alerta}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Characteristics */}
+        <div className="bg-slate-800/80 p-6 rounded-3xl shadow-lg border border-slate-700/50 backdrop-blur-xl">
+          <span className="text-slate-400 font-semibold text-xs uppercase tracking-wider mb-4 block">Filtros Adicionales</span>
+          <div className="flex flex-wrap gap-2">
+            {result.caracteristicas_basicas?.vegano && (
+              <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-4 py-2.5 rounded-full font-bold text-sm flex items-center gap-2 shadow-inner">
+                <Leaf className="w-4 h-4" /> Vegano
+              </span>
+            )}
+            {result.caracteristicas_basicas?.sin_gluten && (
+              <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-4 py-2.5 rounded-full font-bold text-sm flex items-center gap-2 shadow-inner">
+                <Wheat className="w-4 h-4" /> Sin Gluten
+              </span>
+            )}
+            {result.caracteristicas_basicas?.sin_lacteos && (
+              <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-4 py-2.5 rounded-full font-bold text-sm flex items-center gap-2 shadow-inner">
+                <Droplets className="w-4 h-4" /> Sin Lácteos
+              </span>
+            )}
+            {!result.caracteristicas_basicas?.vegano && !result.caracteristicas_basicas?.sin_gluten && !result.caracteristicas_basicas?.sin_lacteos && (
+              <span className="text-slate-500 italic text-sm">Información de dietas no disponible</span>
+            )}
+          </div>
+        </div>
+
+        {/* Halachic Explanation */}
+        <div className="bg-slate-800/80 p-6 rounded-3xl shadow-lg border border-slate-700/50 backdrop-blur-xl">
+          <h3 className="text-white font-bold text-lg mb-3">Detalle del Análisis Halájico</h3>
+          <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-line">
+            {result.explicacion_halajica || 'No se brindaron detalles adicionales de la lógica.'}
+          </p>
+        </div>
+
+        <button
+          onClick={onBack}
+          className="mt-2 w-full text-slate-400 font-bold py-5 hover:bg-slate-800 border border-transparent hover:border-slate-700 rounded-[2rem] transition-all"
+        >
+          ❮ Escanear Otro Producto
+        </button>
+      </div>
+    </div>
+  );
+}
