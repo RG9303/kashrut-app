@@ -381,8 +381,9 @@ function ResultView({ result, onBack }: { result: any, onBack: () => void }) {
             {isKosher ? <CheckCircle2 className="w-10 h-10" /> : <ShieldAlert className="w-10 h-10" />}
             {status}
           </div>
-          <div className="mt-4 inline-flex backdrop-blur-md bg-white/20 px-3 py-1.5 rounded-xl text-white/90 font-medium text-sm w-max border border-white/20">
-            Certeza IA: {result.confianza_analisis || 'N/A'}
+          <div className="mt-4 flex flex-col backdrop-blur-md bg-white/20 px-4 py-3 rounded-xl text-white/90 border border-white/20 max-w-sm">
+            <span className="font-bold text-xs uppercase tracking-wider mb-1 opacity-80">Certeza IA</span>
+            <span className="font-medium text-sm leading-relaxed">{result.confianza_analisis || 'N/A'}</span>
           </div>
         </div>
       </div>
