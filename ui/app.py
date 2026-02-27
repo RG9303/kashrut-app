@@ -43,140 +43,260 @@ if 'preferences' not in st.session_state:
         "rigor": "Regular"
     }
 
-# Custom CSS for premium feel
-# Custom CSS for high-fidelity mobile look
+# Custom CSS for ultra-premium mobile look
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
     
     /* Global Styles */
-    html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
+    html, body, [class*="css"], [class*="st-"] {
+        font-family: 'Outfit', sans-serif !important;
     }
     
     .stApp {
-        background-color: #0f172a; /* Deep Navy */
-        color: white;
+        background: radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 100%);
+        color: #f8fafc;
     }
 
-    /* Scanner Tab Specific (Dark) */
-    [data-testid="stVerticalBlock"] > [style*="flex-direction: column;"] > [data-testid="stVerticalBlock"] {
-        /* This is harder to target specifically per tab without custom divs, 
-           so we'll use a wrapper class for scanner */
+    /* Typography Polish */
+    h1, h2, h3 {
+        font-weight: 700 !important;
+        letter-spacing: -0.02em !important;
     }
 
+    /* Scanner Tab Specific */
     .scanner-wrapper {
         text-align: center;
-        padding: 20px;
+        padding: 30px 20px;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(10px);
+        margin-bottom: 20px;
     }
 
-    /* Target Reticle */
+    /* Target Reticle - Animated and Glowing */
     .scanner-frame {
-        width: 250px;
-        height: 250px;
+        width: 260px;
+        height: 260px;
         border: 2px solid transparent;
-        margin: 40px auto;
+        margin: 30px auto;
         position: relative;
         display: flex;
         justify-content: center;
         align-items: center;
+        animation: pulse-frame 4s infinite alternate;
     }
+    @keyframes pulse-frame {
+        0% { transform: scale(0.98); opacity: 0.8; box-shadow: 0 0 20px rgba(16, 185, 129, 0.1); }
+        100% { transform: scale(1.02); opacity: 1; box-shadow: 0 0 40px rgba(16, 185, 129, 0.4); }
+    }
+    
     .scanner-frame::before, .scanner-frame::after, 
     .scanner-frame span::before, .scanner-frame span::after {
         content: '';
         position: absolute;
-        width: 30px;
-        height: 30px;
-        border: 4px solid #4ade80; /* Vibrant Green */
+        width: 40px;
+        height: 40px;
+        border: 4px solid #10b981; /* Premium Emerald Glow */
+        border-radius: 12px;
+        box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
     }
-    .scanner-frame::before { top: 0; left: 0; border-right: none; border-bottom: none; }
-    .scanner-frame::after { top: 0; right: 0; border-left: none; border-bottom: none; }
-    .scanner-frame span::before { bottom: 0; left: 0; border-right: none; border-top: none; }
-    .scanner-frame span::after { bottom: 0; right: 0; border-left: none; border-top: none; }
+    .scanner-frame::before { top: 0; left: 0; border-right: none; border-bottom: none; border-bottom-right-radius: 0; }
+    .scanner-frame::after { top: 0; right: 0; border-left: none; border-bottom: none; border-bottom-left-radius: 0; }
+    .scanner-frame span::before { bottom: 0; left: 0; border-right: none; border-top: none; border-top-right-radius: 0; }
+    .scanner-frame span::after { bottom: 0; right: 0; border-left: none; border-top: none; border-top-left-radius: 0; }
 
     .inner-reticle {
-        width: 50px;
-        height: 50px;
-        border: 1px dashed rgba(255,255,255,0.5);
-        border-radius: 5px;
+        width: 60px;
+        height: 60px;
+        border: 2px dashed rgba(16, 185, 129, 0.6);
+        border-radius: 50%;
+        animation: rotate 10s linear infinite;
+    }
+    @keyframes rotate {
+        100% { transform: rotate(360deg); }
     }
 
-    /* Buttons Alignment */
+    /* Buttons Alignment & Premium Styling */
     .stButton > button {
-        border-radius: 30px !important;
-        font-weight: 700 !important;
+        border-radius: 16px !important;
+        font-weight: 600 !important;
+        font-size: 1.05rem !important;
+        padding: 0.6rem 1.5rem !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
         text-transform: none !important;
-        letter-spacing: 0.5px !important;
-        transition: all 0.2s ease !important;
+        letter-spacing: 0.3px !important;
     }
 
-    /* Primary Scan Button */
+    /* Primary Scan Button Hover Effects */
     div[data-testid="stVerticalBlock"] > div:nth-child(1) .primary-btn button {
-        background-color: #4ade80 !important;
-        color: #064e3b !important;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+        color: white !important;
         border: none !important;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3) !important;
+    }
+    div[data-testid="stVerticalBlock"] > div:nth-child(1) .primary-btn button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.5) !important;
     }
 
     /* Ghost Upload Button */
     .ghost-btn button {
-        background-color: transparent !important;
-        color: white !important;
-        border: 2px solid white !important;
+        background-color: rgba(255, 255, 255, 0.05) !important;
+        color: #f8fafc !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        backdrop-filter: blur(10px);
+    }
+    .ghost-btn button:hover {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+        border: 1px solid rgba(255, 255, 255, 0.4) !important;
+        transform: translateY(-2px) !important;
     }
 
-    /* Results Page (Light Theme overlap) */
+    /* Expanders styling */
+    .streamlit-expanderHeader {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border-radius: 12px;
+        color: white !important;
+        font-weight: 600;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .streamlit-expanderContent {
+        background: rgba(0, 0, 0, 0.2) !important;
+        border-radius: 0 0 12px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-top: none;
+    }
+
+    /* Inputs (Text, Selectboxes) */
+    .stTextInput > div > div > input, 
+    .stSelectbox > div > div > div {
+        background-color: rgba(0, 0, 0, 0.2) !important;
+        color: white !important;
+        border-radius: 12px !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        padding: 0.5rem 1rem !important;
+        transition: border-color 0.3s ease;
+    }
+    .stTextInput > div > div > input:focus,
+    .stSelectbox > div > div > div:focus {
+        border-color: #10b981 !important;
+        box-shadow: 0 0 0 1px #10b981 !important;
+    }
+
+    /* Results Page */
     .results-bg {
-        background-color: #f1f5f9;
-        margin: -2rem;
-        padding: 2rem;
-        color: #1e293b;
+        background: transparent;
+        margin: -2rem 0;
+        padding: 2rem 0;
+        color: #f8fafc;
     }
 
     .result-card {
-        background: white !important;
+        background: rgba(30, 41, 59, 0.7) !important;
         padding: 24px;
-        border-radius: 20px;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-        margin-bottom: 16px;
-        border: none !important;
-        color: #1e293b !important;
+        border-radius: 24px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        margin-bottom: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        color: #f8fafc !important;
+        backdrop-filter: blur(12px);
+        transition: transform 0.3s ease;
+    }
+    .result-card:hover {
+        transform: translateY(-2px);
     }
     .result-card h3 {
-        color: #1e293b !important;
-        font-size: 1.1rem !important;
-        margin-bottom: 12px !important;
+        color: #f8fafc !important;
+        font-size: 1.2rem !important;
+        margin-bottom: 16px !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
 
     .status-banner-premium {
-        background-color: #4ade80;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         color: white;
-        padding: 15px;
+        padding: 20px;
         text-align: center;
         font-weight: 800;
-        font-size: 1.5rem;
-        border-radius: 0 0 20px 20px;
-        margin: -2rem -2rem 2rem -2rem;
+        font-size: 1.8rem;
+        border-radius: 20px;
+        margin: -1rem 0 2rem 0;
+        box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
         display: flex;
         flex-direction: column;
         align-items: center;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .status-banner-premium.error-state {
+        background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+        box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3);
+        color: white;
+    }
+    
+    .status-banner-premium.warning-state {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        box-shadow: 0 10px 25px rgba(245, 158, 11, 0.3);
+        color: white;
+    }
+
+    /* Metrics and Stats */
+    [data-testid="stMetricValue"] {
+        font-size: 2rem !important;
+        font-weight: 700 !important;
+        color: #10b981 !important;
     }
 
     /* Bottom Navigation Simulation */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 10px;
-        justify-content: center;
-        background-color: transparent;
+        gap: 8px;
+        justify-content: space-around;
+        background: rgba(15, 23, 42, 0.9);
+        backdrop-filter: blur(15px);
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 10px;
+        border-radius: 20px;
+        margin-bottom: 20px;
     }
     .stTabs [data-baseweb="tab"] {
-        height: 50px;
+        height: auto;
+        padding: 12px 16px;
         white-space: pre-wrap;
         background-color: transparent !important;
         border: none !important;
-        color: rgba(255,255,255,0.6) !important;
+        color: rgba(255,255,255,0.4) !important;
+        border-radius: 16px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    .stTabs [data-baseweb="tab"]:hover {
+        background: rgba(255, 255, 255, 0.05) !important;
+        color: rgba(255, 255, 255, 0.8) !important;
     }
     .stTabs [aria-selected="true"] {
-        color: white !important;
-        border-bottom: 2px solid #4ade80 !important;
+        color: #10b981 !important;
+        background: rgba(16, 185, 129, 0.1) !important;
+        border-bottom: none !important;
+        box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.2);
+    }
+
+    /* File Uploader Polish */
+    [data-testid="stFileUploadDropzone"] {
+        border: 2px dashed rgba(255, 255, 255, 0.2) !important;
+        background: rgba(255, 255, 255, 0.02) !important;
+        border-radius: 20px !important;
+        transition: all 0.3s ease;
+    }
+    [data-testid="stFileUploadDropzone"]:hover {
+        border-color: #10b981 !important;
+        background: rgba(16, 185, 129, 0.05) !important;
     }
 
     /* White-Labeling: Hide Streamlit Branding */
@@ -186,6 +306,21 @@ st.markdown("""
     [data-testid="stHeader"] {visibility: hidden;}
     [data-testid="stStatusWidget"] {visibility: hidden;}
     .stDeployButton {display:none;}
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+        width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.02);
+    }
+    ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -325,21 +460,21 @@ with tab1:
                             off_data = st.session_state.off_client.get_product(barcode)
                             if off_data:
                                 # Show product details nicely
-                                st.markdown(f"""<div class="result-card" style="background: white; padding: 16px; border-radius: 12px; margin-bottom: 12px;">
-                                    <h3 style="color: #1e293b; margin-top: 0;">📦 Producto Detectado</h3>
-                                    <div style="color: #1e293b;">
+                                st.markdown(f"""<div class="result-card">
+                                    <h3>📦 Producto Detectado</h3>
+                                    <div>
                                         <p style="font-weight: 600; font-size: 1.1rem; margin: 8px 0;">{off_data.get('product_name', 'Desconocido')}</p>
-                                        <p style="margin: 4px 0;"><strong>Marca:</strong> {off_data.get('brands', 'N/A')}</p>
-                                        <p style="margin: 4px 0;"><strong>Cantidad:</strong> {off_data.get('quantity', 'N/A')}</p>
-                                        <p style="margin: 4px 0;"><strong>Código:</strong> {barcode}</p>
+                                        <p style="margin: 4px 0; color: #94a3b8;"><strong>Marca:</strong> {off_data.get('brands', 'N/A')}</p>
+                                        <p style="margin: 4px 0; color: #94a3b8;"><strong>Cantidad:</strong> {off_data.get('quantity', 'N/A')}</p>
+                                        <p style="margin: 4px 0; color: #94a3b8;"><strong>Código:</strong> {barcode}</p>
                                     </div>
                                 </div>""", unsafe_allow_html=True)
                                 
                                 # Show ingredients if available
                                 if off_data.get('ingredients_text'):
-                                    st.markdown(f"""<div class="result-card" style="background: white; padding: 16px; border-radius: 12px; margin-bottom: 12px;">
-                                        <h3 style="color: #1e293b; margin-top: 0;">🧪 Ingredientes</h3>
-                                        <p style="color: #475569; font-size: 0.9rem; line-height: 1.4;">{off_data.get('ingredients_text')}</p>
+                                    st.markdown(f"""<div class="result-card">
+                                        <h3>🧪 Ingredientes Registrados en Base de Datos</h3>
+                                        <p style="color: #cbd5e1; font-size: 0.95rem; line-height: 1.5;">{off_data.get('ingredients_text')}</p>
                                     </div>""", unsafe_allow_html=True)
                         except Exception as e: pass
                     
@@ -380,15 +515,19 @@ with tab1:
         result = st.session_state.last_result
         status = result.get('resultado', 'Dudoso')
         conf = result.get('confianza_analisis', 'N/A')
-        banner_color = "#4ade80" if "KOSHER" in status.upper() and "NO" not in status.upper() else "#f87171"
-        
+        banner_class = "status-banner-premium"
+        if "NO KOSHER" in status.upper():
+            banner_class += " error-state"
+        elif "PREC" in status.upper() or "PARVE" not in status.upper() and ("DUDO" in status.upper() or "DAIRY" in status.upper() or "LÁCTEO" in status.upper()):
+            banner_class += " warning-state"
+            
         st.markdown(f"""
-            <div class="status-banner-premium" style="background-color: {banner_color};">
+            <div class="{banner_class}">
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <span>✓</span> {status.upper()}
+                    <span>{"✓" if "KOSHER" in status.upper() and "NO" not in status.upper() else "⚠️"}</span> {status.upper()}
                 </div>
-                <div style="font-size: 0.9rem; font-weight: 400; opacity: 0.9; margin-top: 4px;">
-                    Analysis Confidence: {conf}
+                <div style="font-size: 1rem; font-weight: 500; opacity: 0.9; margin-top: 8px; letter-spacing: 0.5px;">
+                    Confianza del Análisis: {conf}
                 </div>
             </div>
             <div class="results-bg">
@@ -397,19 +536,20 @@ with tab1:
         # Main Cards
         st.markdown(f"""
             <div class="result-card">
-                <h3>Certification Seal</h3>
+                <h3>Sello de Certificación</h3>
                 <div style="display: flex; align-items: center; gap: 15px;">
-                    <div style="background: #1e293b; color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <div style="background: rgba(16, 185, 129, 0.1); color: #10b981; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; border: 2px solid rgba(16, 185, 129, 0.3); box-shadow: 0 4px 10px rgba(16, 185, 129, 0.15);">
                         {result.get('sello_detectado', '??')[:2].upper()}
                     </div>
-                    <div style="font-weight: 600; color: #1e293b;">{result.get('sello_detectado', 'Ninguno')}</div>
+                    <div style="font-weight: 600; font-size: 1.1rem; color: #f8fafc;">{result.get('sello_detectado', 'Ninguno')}</div>
                 </div>
             </div>
             
             <div class="result-card">
-                <h3>Category</h3>
-                <div style="display: flex; align-items: center; gap: 12px; font-size: 1.1rem; font-weight: 600;">
-                    <span style="font-size: 1.4rem;">🍃</span> {result.get('categoria', 'Parve')} (Neutral)
+                <h3>Categoría Hallada</h3>
+                <div style="display: flex; align-items: center; gap: 12px; font-size: 1.15rem; font-weight: 600;">
+                    <span style="font-size: 1.6rem;">{ "🍃" if "Parve" in result.get('categoria', 'Parve') else "🥛" if "Lácteo" in result.get('categoria', '') or "Dairy" in result.get('categoria', '') else "🥩" }</span> 
+                    {result.get('categoria', 'Parve')}
                 </div>
             </div>
         """, unsafe_allow_html=True)
@@ -467,11 +607,11 @@ with tab1:
 
         alertas = result.get('alertas', [])
         if alertas and alertas[0].lower() != "ninguno":
-            st.markdown('<div class="result-card"><h3>Alerts</h3>', unsafe_allow_html=True)
+            st.markdown('<div class="result-card"><h3>⚠️ Alertas Importantes</h3>', unsafe_allow_html=True)
             for a in alertas:
                 st.markdown(f"""
-                    <div style="display: flex; gap: 10px; color: #92400e; background: #fffbeb; padding: 12px; border-radius: 12px; margin-bottom: 8px; font-size: 0.9rem; border: 1px solid #fef3c7;">
-                        <span>⚠️</span> <div>{a}</div>
+                    <div style="display: flex; gap: 12px; color: #fef08a; background: rgba(234, 179, 8, 0.1); padding: 16px; border-radius: 16px; margin-bottom: 12px; font-size: 0.95rem; border: 1px solid rgba(234, 179, 8, 0.2); align-items: center;">
+                        <span style="font-size: 1.2rem;">⚠️</span> <div style="line-height: 1.4;">{a}</div>
                     </div>
                 """, unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
@@ -480,41 +620,43 @@ with tab1:
         caracteristicas = result.get('caracteristicas_basicas', {})
         if caracteristicas:
             badges_html = ""
-            if caracteristicas.get('vegano'): badges_html += "<span style='background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 12px; margin-right: 5px; font-size: 0.85rem;'>🌱 Vegano</span>"
-            if caracteristicas.get('sin_gluten'): badges_html += "<span style='background: #fef08a; color: #854d0e; padding: 4px 8px; border-radius: 12px; margin-right: 5px; font-size: 0.85rem;'>🌾 Sin Gluten</span>"
-            if caracteristicas.get('sin_lacteos'): badges_html += "<span style='background: #e0e7ff; color: #3730a3; padding: 4px 8px; border-radius: 12px; margin-right: 5px; font-size: 0.85rem;'>🥛 Sin Lácteos</span>"
+            if caracteristicas.get('vegano'): badges_html += "<span style='background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); padding: 6px 12px; border-radius: 20px; font-weight: 600; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;'><span style='font-size:1.1rem;'>🌱</span> Vegano</span>"
+            if caracteristicas.get('sin_gluten'): badges_html += "<span style='background: rgba(234, 179, 8, 0.15); color: #fde047; border: 1px solid rgba(253, 224, 71, 0.3); padding: 6px 12px; border-radius: 20px; font-weight: 600; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;'><span style='font-size:1.1rem;'>🌾</span> Sin Gluten</span>"
+            if caracteristicas.get('sin_lacteos'): badges_html += "<span style='background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(129, 140, 248, 0.3); padding: 6px 12px; border-radius: 20px; font-weight: 600; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;'><span style='font-size:1.1rem;'>🥛</span> Sin Lácteos</span>"
             
             if badges_html:
-                st.markdown(f'<div class="result-card"><h3>Características Básicas</h3><div style="display: flex; flex-wrap: wrap; gap: 5px;">{badges_html}</div></div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="result-card"><h3>Características Adicionales</h3><div style="display: flex; flex-wrap: wrap; gap: 10px;">{badges_html}</div></div>', unsafe_allow_html=True)
 
         # Ingredients
         ingredientes = result.get('ingredientes_detectados', [])
         if ingredientes:
-            ing_html = '<div class="result-card"><h3>Ingredientes Detectados</h3><ul style="list-style-type: none; padding: 0; margin: 0;">'
+            ing_html = '<div class="result-card"><h3>Ingredientes Analizados</h3><ul style="list-style-type: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px;">'
             for ing in ingredientes:
                 status = ing.get('estatus', '')
-                color = "#475569" # default
+                color = "#cbd5e1" # default
+                icon_color = "#94a3b8"
                 icon = "❔"
                 if "No Kosher" in status or "Precaución" in status:
-                    color = "#ef4444"
+                    icon_color = "#ef4444"
                     icon = "❌" if "No Kosher" in status else "⚠️"
                 elif "Kosher" in status:
-                    color = "#22c55e"
+                    icon_color = "#10b981"
                     icon = "✅"
                 
-                ing_html += f'<li style="padding: 6px 0; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between;"><span style="color: #334155;">{ing.get("nombre", "")}</span><span style="color: {color}; font-size: 0.85rem; font-weight: 600;">{icon} {status}</span></li>'
+                ing_html += f'<li style="padding: 12px; background: rgba(255,255,255,0.02); border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;"><span style="color: {color}; font-weight: 500;">{ing.get("nombre", "")}</span><span style="color: {icon_color}; font-size: 0.9rem; font-weight: 700; background: rgba(0,0,0,0.2); padding: 4px 10px; border-radius: 12px; display: flex; align-items: center; gap: 6px;">{icon} {status}</span></li>'
             
             ing_html += '</ul></div>'
             st.markdown(ing_html, unsafe_allow_html=True)
 
         st.markdown(f"""
             <div class="result-card">
-                <h3>Detailed Explanation</h3>
-                <p style="font-size: 0.95rem; line-height: 1.5; color: #475569;">
+                <h3>Detalle Halájico</h3>
+                <p style="font-size: 1rem; line-height: 1.6; color: #cbd5e1; margin-bottom: 15px;">
                     {result.get('explicacion_halajica', 'No se encontró una explicación detallada.')}
                 </p>
-                <div style="margin-top: 15px; font-size: 0.85rem; color: #64748b; font-weight: 600;">
-                    All ingredients checked: <span style="color: #2563eb;">All Kosher</span>
+                <div style="font-size: 0.9rem; color: #94a3b8; font-weight: 600; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+                    <span>Evaluación general:</span>
+                    <span style="color: #10b981; background: rgba(16, 185, 129, 0.1); padding: 6px 12px; border-radius: 20px;">Todas las normas verificadas</span>
                 </div>
             </div>
             </div>
