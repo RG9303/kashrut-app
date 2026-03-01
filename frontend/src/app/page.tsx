@@ -124,7 +124,7 @@ export default function Home() {
     formData.append('preferences', JSON.stringify(preferences));
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/scan';
+      const apiUrl = '/api/scan';
       const res = await fetch(apiUrl, {
         method: 'POST',
         body: formData,
