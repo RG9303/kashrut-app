@@ -131,8 +131,14 @@ export default function Home() {
       });
 
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.detail || "Error en el servidor");
+        let errMessage = `Error ${res.status}: ${res.statusText}`;
+        try {
+          const err = await res.json();
+          errMessage = err.detail || errMessage;
+        } catch (e) {
+          console.error("Respuesta de error no es JSON válido (posible Timeout/413 de Vercel)");
+        }
+        throw new Error(errMessage);
       }
 
       const data = await res.json();
