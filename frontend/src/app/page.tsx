@@ -124,7 +124,7 @@ export default function Home() {
     formData.append('preferences', JSON.stringify(preferences));
 
     try {
-      const apiUrl = '/api/scan';
+      const apiUrl = '/api/analyze_product';
       const res = await fetch(apiUrl, {
         method: 'POST',
         body: formData,
