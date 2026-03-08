@@ -228,11 +228,21 @@ export default function Home() {
       if (isCameraActive) stopCamera(); 
     } catch (error: any) {
       console.error('Scan failed:', error);
+      let finalMsg = error.message;
       if (error.name === 'AbortError') {
-        alert('Error: La solicitud tardó demasiado tiempo (Timeout).');
-      } else {
-        alert('Error: ' + error.message);
+        finalMsg = 'La solicitud tardó demasiado tiempo (Timeout).';
       }
+      alert('Error: ' + finalMsg);
+      
+      // If we already rendered Phase 1 but Phase 2 crashed (e.g. Rate Limit), 
+      // replace the loading skeleton with the error message.
+      setResult((prev: any) => {
+        if (prev && prev.phase === 'fast') {
+          return { ...prev, phase: 'error', explicacion_halajica: `**Análisis Detallado:**\nNo se pudo cargar el desglose final debido a un error: ${finalMsg}` };
+        }
+        return prev; // Or null if it crashed before Phase 1
+      });
+
     } finally {
       setIsScanning(false);
     }

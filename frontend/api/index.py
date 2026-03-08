@@ -161,6 +161,10 @@ async def scan_product(
         if phase == "fast":
             print("[API] Executing FAST phase analysis")
             result = kashrut_engine.analyze_fast(loaded_images, extra_context=extra_context)
+            if "error" in result:
+                if "429" in result["error"] or "quota" in result["error"].lower():
+                    raise HTTPException(status_code=429, detail="Límite del servidor AI excedido (Quota). Por favor espera 1 minuto y vuelve a intentar.")
+                raise HTTPException(status_code=500, detail=result["error"])
         else:
             if extra_context and not loaded_images:
                 # Only text analysis if we just got a barcode and no images
@@ -174,6 +178,10 @@ async def scan_product(
                     extra_context=extra_context,
                     preferences=prefs
                 )
+            if "error" in result:
+                if "429" in result["error"] or "quota" in result["error"].lower():
+                    raise HTTPException(status_code=429, detail="Límite del servidor AI excedido (Quota). Por favor espera 1 minuto y vuelve a intentar.")
+                raise HTTPException(status_code=500, detail=result["error"])
             
         ai_end = time.time()
         print(f"[API] ⏱️ AI Request Time: {ai_end - ai_start:.2f}s")
