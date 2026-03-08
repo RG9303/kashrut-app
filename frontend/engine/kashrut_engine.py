@@ -47,12 +47,36 @@ Formato JSON Estricto:
 {
   "resultado": "Kosher / No Kosher / Dudoso",
   "confianza_analisis": "0-100%",
-  "sello_detectado": "Nombre exacto de la agencia (ej. 'OU', 'Star-K') o 'Ninguno'",
+  "sello_detectado": {
+    "nombre": "Nombre exacto de la agencia (ej. 'OU', 'Star-K') o 'Ninguno'",
+    "pais": "Ej. 'Estados Unidos', 'Israel', 'México', o 'N/A'",
+    "confianza": "0-100%"
+  },
   "categoria": "Parve / Dairy / Meat / DE",
   "caracteristicas_basicas": {"vegano": true/false, "sin_gluten": true/false, "sin_lacteos": true/false},
   "ingredientes_detectados": [{"nombre": "Ingrediente", "estatus": "Kosher/No Kosher/Dudoso/Precaución"}],
   "alertas": ["Lista de alertas. Usa 'Ninguno' si no hay alertas"],
   "explicacion_halajica": "**Resumen Rápido:** [1-2 oraciones]\\n\\n**Análisis Detallado:** [Toda la justificación técnica...]"
+}
+"""
+
+FAST_SYSTEM_PROMPT = """
+Rol: Actúas como un escáner Kosher ultrarrápido (Phase 1).
+Objetivo: Tu única misión es detectar la categoría, estatus preliminar y el sello Hechsher de manera casi instantánea basándote estrictamente en pistas visuales y textuales obvias superficiales. No hagas razonamiento halájico profundo. Esto es para dar una respuesta a la UI en <2 segundos.
+
+Regla Estricta: Si encuentras aditivos riesgosos evidentes pero NINGÚN sello, marca como 'No Kosher' o 'Dudoso'.
+
+Formato JSON Estricto:
+{
+  "resultado": "Kosher / No Kosher / Dudoso",
+  "confianza_analisis": "0-100%",
+  "sello_detectado": {
+    "nombre": "Nombre exacto de la agencia o 'Ninguno'",
+    "pais": "País o 'N/A'",
+    "confianza": "0-100%"
+  },
+  "categoria": "Parve / Dairy / Meat / DE",
+  "alertas_preliminares": ["Lista breve"]
 }
 """
 
@@ -63,9 +87,9 @@ class KashrutEngine:
             raise ValueError("GOOGLE_API_KEY no encontrada en las variables de entorno.")
         genai.configure(api_key=api_key, transport='rest')
         
-        # Primary model - using stable flash model
+        # Models with respective system prompts
+        self.fast_model = genai.GenerativeModel('gemini-flash-latest', system_instruction=FAST_SYSTEM_PROMPT)
         self.primary_model = genai.GenerativeModel('gemini-flash-latest', system_instruction=SYSTEM_PROMPT)
-        # Fallback model - using pro model
         self.fallback_model = genai.GenerativeModel('gemini-pro-latest', system_instruction=SYSTEM_PROMPT)
 
     def _is_quota_error(self, error):
@@ -138,6 +162,27 @@ class KashrutEngine:
             except Exception as e2:
                 print(f"[Engine] Fallback model exhausted: {e2}")
                 return {"error": f"Error en análisis de imágenes: {str(e2)}"}
+
+    def analyze_fast(self, images, extra_context=None):
+        """
+        Phase 1: Lightning fast analysis just for Hechsher and Category
+        """
+        prompt = "Haz un escaneo rápido (ultra-rápido) buscando sellos Hechsher o leyendo ingredientes para tu categoría inicial."
+        if extra_context:
+            prompt += f"\n\nIngredientes: {extra_context}"
+            
+        if not isinstance(images, list):
+            images = [images]
+            
+        content = [prompt] + images
+        try:
+            print("[Engine] Attempting FAST model scan...")
+            # We strictly enforce max_retries=1 because this MUST be fast
+            response = self._try_generate_content(self.fast_model, content, max_retries=1)
+            return self._parse_response(response)
+        except Exception as e:
+            print(f"[Engine] Fast model failed: {e}")
+            return {"error": f"Fast scan timeout: {e}"}
 
     def _parse_response(self, response):
         try:

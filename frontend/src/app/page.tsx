@@ -158,20 +158,17 @@ export default function Home() {
     if (imageFile) {
       formData.append('images', imageFile, 'capture.jpg');
     }
-    // Only send barcode if it's explicitly set or typed
     const finalBarcode = barcodeStr || barcode;
     if (finalBarcode) {
       formData.append('barcode', finalBarcode);
     }
 
-    // Must have at least one to prevent 400 bad request error from API
     if (!imageFile && !finalBarcode) {
       setIsScanning(false);
       alert("Proporciona una imagen o un código de barras");
       return;
     }
 
-    // Attached User Profile Preferences
     const preferences = {
       origen: userOrigin,
       pais: userCountry
@@ -179,18 +176,39 @@ export default function Home() {
     formData.append('preferences', JSON.stringify(preferences));
 
     try {
-      // Llama a la ruta API serverless de Vercel directamente
-      const apiUrl = '/api/scan';
+      // PHASE 1: Fast Scan 
+      const fastController = new AbortController();
+      const fastTimeout = setTimeout(() => fastController.abort(), 15000); // 15s max for fast phase
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 50000); // 50 seconds timeout for Vercel 60s limit
+      let fastResult = null;
+      try {
+        const fastRes = await fetch('/api/scan?phase=fast', {
+          method: 'POST',
+          body: formData,
+          signal: fastController.signal
+        });
+        clearTimeout(fastTimeout);
 
-      const res = await fetch(apiUrl, {
+        if (fastRes.ok) {
+          fastResult = await fastRes.json();
+          // Render Phase 1 immediately
+          setResult({ ...fastResult, phase: 'fast' });
+        }
+      } catch (e) {
+        console.error("Phase 1 Fast Scan failed or timed out:", e);
+        // Continue to Phase 2 regardless
+      }
+
+      // PHASE 2: Detailed Scan
+      const detailedController = new AbortController();
+      const detailedTimeout = setTimeout(() => detailedController.abort(), 50000);
+
+      const res = await fetch('/api/scan?phase=detailed', {
         method: 'POST',
         body: formData,
-        signal: controller.signal
+        signal: detailedController.signal
       });
-      clearTimeout(timeoutId);
+      clearTimeout(detailedTimeout);
 
       if (!res.ok) {
         let errMessage = `Error ${res.status}: ${res.statusText}`;
@@ -198,18 +216,20 @@ export default function Home() {
           const err = await res.json();
           errMessage = err.detail || errMessage;
         } catch (e) {
-          console.error("Respuesta de error no es JSON válido (posible Timeout/413 de Vercel)");
+          console.error("Error parsing detailed failure");
         }
         throw new Error(errMessage);
       }
 
       const data = await res.json();
-      setResult(data);
-      if (isCameraActive) stopCamera(); // optionally stop camera when done
+      // Render Phase 2 
+      setResult({ ...data, phase: 'detailed' });
+
+      if (isCameraActive) stopCamera(); 
     } catch (error: any) {
       console.error('Scan failed:', error);
       if (error.name === 'AbortError') {
-        alert('Error: La solicitud tardó demasiado tiempo (Timeout). El análisis excede los 50 segundos.');
+        alert('Error: La solicitud tardó demasiado tiempo (Timeout).');
       } else {
         alert('Error: ' + error.message);
       }
@@ -481,10 +501,17 @@ function ResultView({ result, onBack }: { result: any, onBack: () => void }) {
             <span className="text-slate-400 font-semibold text-xs uppercase tracking-wider mb-2 block">Sello</span>
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center font-black text-xl border border-emerald-500/20 shadow-inner">
-                {result.sello_detectado?.substring(0, 2).toUpperCase() || '??'}
+                {result.sello_detectado?.nombre ? result.sello_detectado.nombre.substring(0, 2).toUpperCase() : '??'}
               </div>
-              <div className="font-bold text-lg text-white leading-tight">
-                {result.sello_detectado || 'Ninguno'}
+              <div className="flex flex-col">
+                <div className="font-bold text-lg text-white leading-tight">
+                  {result.sello_detectado?.nombre || 'Ninguno'}
+                </div>
+                {result.sello_detectado?.nombre && result.sello_detectado.nombre !== 'Ninguno' && (
+                  <span className="text-xs text-slate-400 font-medium">
+                    {result.sello_detectado.pais || ''} • {result.sello_detectado.confianza || ''}
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -565,13 +592,26 @@ function ResultView({ result, onBack }: { result: any, onBack: () => void }) {
         </div>
 
         {/* Halachic Explanation */}
-        <div className="bg-slate-800/80 p-6 rounded-3xl shadow-lg border border-slate-700/50 backdrop-blur-xl">
+        <div className="bg-slate-800/80 p-6 rounded-3xl shadow-lg border border-slate-700/50 backdrop-blur-xl relative overflow-hidden">
           <h3 className="text-white font-bold text-lg mb-3">Detalle del Análisis Halájico</h3>
-          <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-line">
-            {result.explicacion_halajica?.includes('**Análisis Detallado:**') 
-              ? result.explicacion_halajica.split('**Análisis Detallado:**')[1]?.trim() 
-              : result.explicacion_halajica || 'No se brindaron detalles adicionales de la lógica.'}
-          </p>
+          
+          {result.phase === 'fast' ? (
+            <div className="flex flex-col gap-3 animate-pulse">
+              <div className="h-4 bg-slate-700/50 rounded w-full"></div>
+              <div className="h-4 bg-slate-700/50 rounded w-5/6"></div>
+              <div className="h-4 bg-slate-700/50 rounded w-4/6"></div>
+              <div className="mt-2 flex items-center gap-2 text-emerald-400/80 text-sm font-medium">
+                <div className="w-4 h-4 border-2 border-emerald-500/30 border-t-emerald-400 rounded-full animate-spin"></div>
+                Redactando desglose halájico detallado...
+              </div>
+            </div>
+          ) : (
+            <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-line animate-in fade-in duration-700">
+              {result.explicacion_halajica?.includes('**Análisis Detallado:**') 
+                ? result.explicacion_halajica.split('**Análisis Detallado:**')[1]?.trim() 
+                : result.explicacion_halajica || 'No se brindaron detalles adicionales de la lógica.'}
+            </p>
+          )}
         </div>
 
         <button

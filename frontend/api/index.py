@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from typing import List, Optional
@@ -62,6 +62,7 @@ async def scan_product(
     barcode: Optional[str] = Form(None),
     preferences: Optional[str] = Form(None),
     images: Optional[List[UploadFile]] = File(None),
+    phase: Optional[str] = Query("detailed"),
     kashrut_engine: KashrutEngine = Depends(get_engine),
     off_service: OpenFoodFactsClient = Depends(get_off_client)
 ):
@@ -105,11 +106,11 @@ async def scan_product(
         raise HTTPException(status_code=400, detail="Must provide at least one image or a barcode")
 
     # ----- CACHE LAYER -----
-    # Create a unique hash for this scan based on barcode + preferences + images
+    # Create a unique hash for this scan based on barcode + preferences + images + phase
     cache_dir = "/tmp/kashrut_cache"
     os.makedirs(cache_dir, exist_ok=True)
     
-    hash_input = str(barcode) + json.dumps(prefs)
+    hash_input = str(barcode) + json.dumps(prefs) + phase
     if images:
         for img in images:
             # Re-read position for hashing without losing stream
@@ -154,21 +155,25 @@ async def scan_product(
     extra_context = off_data.get('ingredients_text') if off_data else None
     
     # 3. Analyze
-    print("[API] Starting AI Analysis...")
+    print(f"[API] Starting AI Analysis (Phase: {phase})...")
     ai_start = time.time()
     try:
-        if extra_context and not loaded_images:
-            # Only text analysis if we just got a barcode and no images
-            print("[API] Executing text-only analysis (barcode but no images)")
-            result = kashrut_engine.analyze_text(extra_context, preferences=prefs)
+        if phase == "fast":
+            print("[API] Executing FAST phase analysis")
+            result = kashrut_engine.analyze_fast(loaded_images, extra_context=extra_context)
         else:
-            # Full image + context analysis
-            print("[API] Executing full image + context analysis")
-            result = kashrut_engine.analyze_product(
-                loaded_images, 
-                extra_context=extra_context,
-                preferences=prefs
-            )
+            if extra_context and not loaded_images:
+                # Only text analysis if we just got a barcode and no images
+                print("[API] Executing text-only analysis (barcode but no images)")
+                result = kashrut_engine.analyze_text(extra_context, preferences=prefs)
+            else:
+                # Full image + context analysis
+                print("[API] Executing full image + context analysis")
+                result = kashrut_engine.analyze_product(
+                    loaded_images, 
+                    extra_context=extra_context,
+                    preferences=prefs
+                )
             
         ai_end = time.time()
         print(f"[API] ⏱️ AI Request Time: {ai_end - ai_start:.2f}s")
