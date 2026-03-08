@@ -35,7 +35,10 @@ except Exception as e:
 
 def get_engine():
     if not engine:
-        raise HTTPException(status_code=500, detail="Kashrut AI Engine is not available. Check configuration.")
+        raise HTTPException(
+            status_code=500, 
+            detail="Kashrut AI Engine init failed: GOOGLE_API_KEY environment variable is missing in Vercel. Please add it to your project settings."
+        )
     return engine
 
 def get_off_client():
