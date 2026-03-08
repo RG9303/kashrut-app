@@ -60,21 +60,68 @@ export default function Home() {
     return new Blob([u8arr], { type: mime });
   }
 
+  // File Compression Helper
+  const compressImageFile = (file: File): Promise<Blob> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        const maxSize = 1080;
+        if (width > height && width > maxSize) {
+          height = Math.round((height * maxSize) / width);
+          width = maxSize;
+        } else if (height > maxSize) {
+          width = Math.round((width * maxSize) / height);
+          height = maxSize;
+        }
+        
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(file); // fallback
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else resolve(file); // fallback
+        }, 'image/jpeg', 0.6); // 60% quality JPEG
+      };
+      img.onerror = () => resolve(file); // fallback on error
+    });
+  };
+
   // Handle Photo Capture
   const takePhotoAndScan = async () => {
     if (!videoRef.current || !canvasRef.current) return;
 
-    // Draw video frame to canvas
+    // Draw video frame to canvas, resizing if needed
     const video = videoRef.current;
+    let width = video.videoWidth;
+    let height = video.videoHeight;
+    const maxSize = 1080;
+    
+    if (width > height && width > maxSize) {
+      height = Math.round((height * maxSize) / width);
+      width = maxSize;
+    } else if (height > maxSize) {
+      width = Math.round((width * maxSize) / height);
+      height = maxSize;
+    }
+
     const canvas = canvasRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    canvas.width = width;
+    canvas.height = height;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // Get image blob
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+    // Get image blob, highly compressed
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
     const blob = dataURLtoBlob(dataUrl);
 
     // Proceed to scan
@@ -84,7 +131,15 @@ export default function Home() {
   // Handle File Upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return;
-    await executeScan(e.target.files[0]);
+    setIsScanning(true); // show feedback early during compression
+    const file = e.target.files[0];
+    try {
+      const compressedBlob = await compressImageFile(file);
+      await executeScan(compressedBlob);
+    } catch (err) {
+      console.error(err);
+      await executeScan(file); // fallback to original
+    }
   };
 
   // Handle Barcode only submission
@@ -127,10 +182,15 @@ export default function Home() {
       // Llama a la ruta API serverless de Vercel directamente
       const apiUrl = '/api/scan';
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 50000); // 50 seconds timeout for Vercel 60s limit
+
       const res = await fetch(apiUrl, {
         method: 'POST',
         body: formData,
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
 
       if (!res.ok) {
         let errMessage = `Error ${res.status}: ${res.statusText}`;
@@ -148,7 +208,11 @@ export default function Home() {
       if (isCameraActive) stopCamera(); // optionally stop camera when done
     } catch (error: any) {
       console.error('Scan failed:', error);
-      alert('Error: ' + error.message);
+      if (error.name === 'AbortError') {
+        alert('Error: La solicitud tardó demasiado tiempo (Timeout). El análisis excede los 50 segundos.');
+      } else {
+        alert('Error: ' + error.message);
+      }
     } finally {
       setIsScanning(false);
     }

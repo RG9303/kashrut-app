@@ -135,18 +135,27 @@ class KashrutEngine:
         error_str = str(error).lower()
         return '429' in error_str or 'quota' in error_str or 'rate limit' in error_str
 
-    def _try_generate_content(self, model, content_list, _unused_arg=None, max_retries=3):
+    def _try_generate_content(self, model, content_list, _unused_arg=None, max_retries=2):
         """
         Try to generate content with retry logic and exponential backoff.
         """
+        print(f"[Engine] Starting content generation. Input items: {len(content_list)}")
         for attempt in range(max_retries):
             try:
+                print(f"[Engine] Calling Gemini API (attempt {attempt + 1}/{max_retries})...")
+                start_time = time.time()
                 response = model.generate_content(content_list)
+                print(f"[Engine] Gemini API call successful in {time.time() - start_time:.2f}s")
                 return response
             except Exception as e:
+                print(f"[Engine] Gemini call failed on attempt {attempt + 1}: {e}")
                 # Exponential backoff
-                time.sleep(2 ** attempt)
-                if attempt == max_retries - 1:
+                if attempt < max_retries - 1:
+                    sleep_time = 2 ** attempt
+                    print(f"[Engine] Retrying in {sleep_time}s...")
+                    time.sleep(sleep_time)
+                else:
+                    print(f"[Engine] Exhausted all attempts.")
                     raise e
         return None
 
@@ -178,15 +187,18 @@ class KashrutEngine:
 
         try:
             # Try primary model
+            print("[Engine] Attempting primary model (flash)...")
             response = self._try_generate_content(self.primary_model, content)
             return self._parse_response(response)
         except Exception as e:
-            print(f"Error con modelo primario: {e}")
+            print(f"[Engine] Primary model exhausted: {e}")
             try:
                 # Try fallback model
-                response = self._try_generate_content(self.fallback_model, content)
+                print("[Engine] Attempting fallback model (pro)...")
+                response = self._try_generate_content(self.fallback_model, content, max_retries=1)
                 return self._parse_response(response)
             except Exception as e2:
+                print(f"[Engine] Fallback model exhausted: {e2}")
                 return {"error": f"Error en análisis de imágenes: {str(e2)}"}
 
     def _parse_response(self, response):

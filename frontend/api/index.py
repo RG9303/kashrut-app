@@ -66,7 +66,7 @@ async def scan_product(
     Main endpoint for scanning a product.
     Accepts multiple images, an optional barcode, and user preferences.
     """
-    print(f"Received scan request. Barcode: {barcode}, Images: {len(images) if images else 0}")
+    print(f"[API] POST /api/scan started. Barcode: {barcode}, Images: {len(images) if images else 0}")
     
     # Parse preferences if provided
     prefs = {
@@ -84,13 +84,16 @@ async def scan_product(
     # Load images
     loaded_images = []
     if images:
+        print(f"[API] Loading {len(images)} images into memory...")
         for img in images:
             content = await img.read()
             try:
                 loaded_images.append(Image.open(BytesIO(content)))
             except Exception as e:
+                print(f"[API] Image load error: {e}")
                 raise HTTPException(status_code=400, detail=f"Invalid image file: {e}")
             
+    print(f"[API] Successfully loaded {len(loaded_images)} valid images. Checking for barcode...")
     if not loaded_images and not barcode:
         raise HTTPException(status_code=400, detail="Must provide at least one image or a barcode")
 
@@ -100,30 +103,38 @@ async def scan_product(
     
     # 1. Try to extract barcode from image if not provided
     if not detected_barcode and loaded_images:
+        print("[API] No barcode provided. Attempting to extract from image...")
         detected_barcode = kashrut_engine.extract_barcode(loaded_images[0])
+        print(f"[API] Extracted barcode: {detected_barcode}")
         
     # 2. Get data from OpenFoodFacts if we have a barcode
     if detected_barcode:
+        print(f"[API] Fetching OpenFoodFacts data for barcode {detected_barcode}...")
         try:
             off_data = off_service.get_product(detected_barcode)
+            print("[API] OpenFoodFacts data retrieved successfully.")
         except Exception as e:
-            print(f"Warning: Failed to fetch from OpenFoodFacts: {e}")
+            print(f"[API] Warning: Failed to fetch from OpenFoodFacts: {e}")
 
     extra_context = off_data.get('ingredients_text') if off_data else None
     
     # 3. Analyze
+    print("[API] Starting AI Analysis...")
     try:
         if extra_context and not loaded_images:
             # Only text analysis if we just got a barcode and no images
+            print("[API] Executing text-only analysis (barcode but no images)")
             result = kashrut_engine.analyze_text(extra_context, preferences=prefs)
         else:
             # Full image + context analysis
+            print("[API] Executing full image + context analysis")
             result = kashrut_engine.analyze_product(
                 loaded_images, 
                 extra_context=extra_context,
                 preferences=prefs
             )
             
+        print("[API] AI Analysis Complete. Formatting response...")
         # Optional: Add the OpenFoodFacts data to the result for the frontend
         if off_data:
             result['off_data'] = {
