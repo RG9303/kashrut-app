@@ -4,7 +4,6 @@ import uvicorn
 from typing import List, Optional
 import json
 from io import BytesIO
-import base64
 from PIL import Image
 
 from engine.kashrut_engine import KashrutEngine
@@ -19,7 +18,7 @@ app = FastAPI(
 # CORS configuration to allow requests from the Next.js frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Update this in production to specific origins
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -46,13 +45,17 @@ def get_off_client():
 
 @app.get("/")
 def read_root():
-    return {"status": "ok", "message": "KosherScan API is running"}
+    return {"status": "ok", "message": "KosherScan API is running (Vercel Serverless)"}
+
+@app.get("/api")
+def read_api_root():
+    return {"status": "ok", "message": "KosherScan API is running (Vercel Serverless)"}
 
 @app.post("/api/scan")
 async def scan_product(
-    images: List[UploadFile] = File(...),
     barcode: Optional[str] = Form(None),
     preferences: Optional[str] = Form(None),
+    images: Optional[List[UploadFile]] = File(None),
     kashrut_engine: KashrutEngine = Depends(get_engine),
     off_service: OpenFoodFactsClient = Depends(get_off_client)
 ):
@@ -60,7 +63,7 @@ async def scan_product(
     Main endpoint for scanning a product.
     Accepts multiple images, an optional barcode, and user preferences.
     """
-    print(f"Received scan request. Barcode: {barcode}, Images: {len(images)}")
+    print(f"Received scan request. Barcode: {barcode}, Images: {len(images) if images else 0}")
     
     # Parse preferences if provided
     prefs = {
@@ -77,12 +80,13 @@ async def scan_product(
 
     # Load images
     loaded_images = []
-    for img in images:
-        content = await img.read()
-        try:
-            loaded_images.append(Image.open(BytesIO(content)))
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Invalid image file: {e}")
+    if images:
+        for img in images:
+            content = await img.read()
+            try:
+                loaded_images.append(Image.open(BytesIO(content)))
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Invalid image file: {e}")
             
     if not loaded_images and not barcode:
         raise HTTPException(status_code=400, detail="Must provide at least one image or a barcode")
@@ -133,5 +137,6 @@ async def scan_product(
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
+# This ensures that when running locally with uvicorn directly, it still works.
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("api.index:app", host="0.0.0.0", port=8000, reload=True)

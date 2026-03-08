@@ -124,11 +124,8 @@ export default function Home() {
     formData.append('preferences', JSON.stringify(preferences));
 
     try {
-      // Use absolute backend URL in production to prevent Next.js 404 routing errors
-      // Fallback explicitly to the production Render URL in case Vercel env is missing
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL 
-        ? `${process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '')}/api/scan` 
-        : 'https://kashrut-api.onrender.com/api/scan';
+      // Llama a la ruta API serverless de Vercel directamente
+      const apiUrl = '/api/scan';
 
       const res = await fetch(apiUrl, {
         method: 'POST',
