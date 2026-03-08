@@ -50,9 +50,9 @@ def read_root():
 
 @app.post("/api/scan")
 async def scan_product(
-    images: List[UploadFile] = File(...),
     barcode: Optional[str] = Form(None),
     preferences: Optional[str] = Form(None),
+    images: Optional[List[UploadFile]] = File(None),
     kashrut_engine: KashrutEngine = Depends(get_engine),
     off_service: OpenFoodFactsClient = Depends(get_off_client)
 ):
@@ -77,12 +77,13 @@ async def scan_product(
 
     # Load images
     loaded_images = []
-    for img in images:
-        content = await img.read()
-        try:
-            loaded_images.append(Image.open(BytesIO(content)))
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Invalid image file: {e}")
+    if images:
+        for img in images:
+            content = await img.read()
+            try:
+                loaded_images.append(Image.open(BytesIO(content)))
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Invalid image file: {e}")
             
     if not loaded_images and not barcode:
         raise HTTPException(status_code=400, detail="Must provide at least one image or a barcode")
