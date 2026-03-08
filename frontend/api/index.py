@@ -6,6 +6,7 @@ import json
 from io import BytesIO
 import hashlib
 import os
+import time
 from PIL import Image
 
 from engine.kashrut_engine import KashrutEngine
@@ -68,9 +69,10 @@ async def scan_product(
     Main endpoint for scanning a product.
     Accepts multiple images, an optional barcode, and user preferences.
     """
+    overall_start = time.time()
     print(f"[API] POST /api/scan started. Barcode: {barcode}, Images: {len(images) if images else 0}")
     
-    # Parse preferences if provided
+    form_data_start = time.time()
     prefs = {
         "jalav_stam": "Permitido",
         "pesaj_tradicion": "Sefaradí (Kitniyot OK)",
@@ -95,7 +97,10 @@ async def scan_product(
                 print(f"[API] Image load error: {e}")
                 raise HTTPException(status_code=400, detail=f"Invalid image file: {e}")
             
+    form_data_end = time.time()
+    print(f"[API] ⏱️ FormData & Image Parse Time: {form_data_end - form_data_start:.2f}s")
     print(f"[API] Successfully loaded {len(loaded_images)} valid images. Checking for barcode...")
+    
     if not loaded_images and not barcode:
         raise HTTPException(status_code=400, detail="Must provide at least one image or a barcode")
 
@@ -150,6 +155,7 @@ async def scan_product(
     
     # 3. Analyze
     print("[API] Starting AI Analysis...")
+    ai_start = time.time()
     try:
         if extra_context and not loaded_images:
             # Only text analysis if we just got a barcode and no images
@@ -164,7 +170,11 @@ async def scan_product(
                 preferences=prefs
             )
             
+        ai_end = time.time()
+        print(f"[API] ⏱️ AI Request Time: {ai_end - ai_start:.2f}s")
         print("[API] AI Analysis Complete. Formatting response...")
+        
+        res_start = time.time()
         # Optional: Add the OpenFoodFacts data to the result for the frontend
         if off_data:
             result['off_data'] = {
@@ -180,6 +190,10 @@ async def scan_product(
                 json.dump(result, f)
         except Exception as e:
             print(f"[API] Failed to write cache: {e}")
+            
+        res_end = time.time()
+        print(f"[API] ⏱️ Response Generation Time: {res_end - res_start:.2f}s")
+        print(f"[API] ⏱️ Total /api/scan Execution Time: {time.time() - overall_start:.2f}s")
             
         return result
         

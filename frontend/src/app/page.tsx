@@ -60,7 +60,7 @@ export default function Home() {
     return new Blob([u8arr], { type: mime });
   }
 
-  // File Compression Helper (WebP 800px)
+  // File Compression Helper (WebP 1024px)
   const compressImageFile = (file: File): Promise<Blob> => {
     return new Promise((resolve) => {
       const img = new Image();
@@ -68,7 +68,7 @@ export default function Home() {
       img.onload = () => {
         let width = img.width;
         let height = img.height;
-        const maxSize = 800;
+        const maxSize = 1024;
         if (width > height && width > maxSize) {
           height = Math.round((height * maxSize) / width);
           width = maxSize;
@@ -89,7 +89,7 @@ export default function Home() {
         canvas.toBlob((blob) => {
           if (blob) resolve(blob);
           else resolve(file); // fallback
-        }, 'image/webp', 0.6); // 60% quality WebP
+        }, 'image/webp', 0.7); // 70% quality WebP
       };
       img.onerror = () => resolve(file); // fallback on error
     });
@@ -103,7 +103,7 @@ export default function Home() {
     const video = videoRef.current;
     let width = video.videoWidth;
     let height = video.videoHeight;
-    const maxSize = 800;
+    const maxSize = 1024;
     
     if (width > height && width > maxSize) {
       height = Math.round((height * maxSize) / width);
@@ -121,7 +121,7 @@ export default function Home() {
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     // Get image blob, highly compressed WebP
-    const dataUrl = canvas.toDataURL('image/webp', 0.6);
+    const dataUrl = canvas.toDataURL('image/webp', 0.7);
     const blob = dataURLtoBlob(dataUrl);
 
     // Proceed to scan
