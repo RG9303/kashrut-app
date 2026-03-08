@@ -1,15 +1,15 @@
 {
-  "buildCommand": "npm install && npm run build",
-  "outputDirectory": ".next",
+  "buildCommand": "npm --prefix frontend install && npm --prefix frontend run build",
+  "outputDirectory": "frontend/.next",
   "framework": "nextjs",
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/../backend/main.py"
+      "destination": "/backend/main.py"
     }
   ],
   "functions": {
-    "../backend/**/*.py": {
+    "backend/**/*.py": {
       "maxDuration": 60
     }
   }
