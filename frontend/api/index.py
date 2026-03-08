@@ -4,6 +4,8 @@ import uvicorn
 from typing import List, Optional
 import json
 from io import BytesIO
+import hashlib
+import os
 from PIL import Image
 
 from engine.kashrut_engine import KashrutEngine
@@ -97,6 +99,34 @@ async def scan_product(
     if not loaded_images and not barcode:
         raise HTTPException(status_code=400, detail="Must provide at least one image or a barcode")
 
+    # ----- CACHE LAYER -----
+    # Create a unique hash for this scan based on barcode + preferences + images
+    cache_dir = "/tmp/kashrut_cache"
+    os.makedirs(cache_dir, exist_ok=True)
+    
+    hash_input = str(barcode) + json.dumps(prefs)
+    if images:
+        for img in images:
+            # Re-read position for hashing without losing stream
+            await img.seek(0)
+            chunk = await img.read(8192) # just hash first 8k for speed
+            hash_input += chunk.hex()
+            await img.seek(0) # reset for PIL
+            
+    req_hash = hashlib.md5(hash_input.encode('utf-8')).hexdigest()
+    cache_file = os.path.join(cache_dir, f"{req_hash}.json")
+    
+    if os.path.exists(cache_file):
+        print(f"[API] Cache HIT for hash {req_hash}! Returning instant result.")
+        try:
+            with open(cache_file, 'r') as f:
+                return json.load(f)
+        except Exception:
+            pass # fallback to processing if cache is corrupted
+            
+    print(f"[API] Cache MISS for hash {req_hash}. Proceeding to AI...")
+    # -----------------------
+
     # Flow
     detected_barcode = barcode
     off_data = None
@@ -143,6 +173,13 @@ async def scan_product(
                 'quantity': off_data.get('quantity'),
                 'barcode': detected_barcode
             }
+            
+        # Save to cache before returning
+        try:
+            with open(cache_file, 'w') as f:
+                json.dump(result, f)
+        except Exception as e:
+            print(f"[API] Failed to write cache: {e}")
             
         return result
         

@@ -60,7 +60,7 @@ export default function Home() {
     return new Blob([u8arr], { type: mime });
   }
 
-  // File Compression Helper
+  // File Compression Helper (WebP 800px)
   const compressImageFile = (file: File): Promise<Blob> => {
     return new Promise((resolve) => {
       const img = new Image();
@@ -68,7 +68,7 @@ export default function Home() {
       img.onload = () => {
         let width = img.width;
         let height = img.height;
-        const maxSize = 1080;
+        const maxSize = 800;
         if (width > height && width > maxSize) {
           height = Math.round((height * maxSize) / width);
           width = maxSize;
@@ -89,7 +89,7 @@ export default function Home() {
         canvas.toBlob((blob) => {
           if (blob) resolve(blob);
           else resolve(file); // fallback
-        }, 'image/jpeg', 0.6); // 60% quality JPEG
+        }, 'image/webp', 0.6); // 60% quality WebP
       };
       img.onerror = () => resolve(file); // fallback on error
     });
@@ -103,7 +103,7 @@ export default function Home() {
     const video = videoRef.current;
     let width = video.videoWidth;
     let height = video.videoHeight;
-    const maxSize = 1080;
+    const maxSize = 800;
     
     if (width > height && width > maxSize) {
       height = Math.round((height * maxSize) / width);
@@ -120,8 +120,8 @@ export default function Home() {
     if (!ctx) return;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // Get image blob, highly compressed
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+    // Get image blob, highly compressed WebP
+    const dataUrl = canvas.toDataURL('image/webp', 0.6);
     const blob = dataURLtoBlob(dataUrl);
 
     // Proceed to scan
@@ -462,6 +462,18 @@ function ResultView({ result, onBack }: { result: any, onBack: () => void }) {
 
       <div className="w-full flex flex-col gap-5 mt-2">
 
+        {/* Quick Summary Section */}
+        {result.explicacion_halajica && result.explicacion_halajica.includes('**Resumen Rápido:**') && (
+          <div className="bg-slate-800/80 p-6 rounded-3xl shadow-lg border border-emerald-500/30 backdrop-blur-xl">
+            <h3 className="text-white font-bold text-lg mb-2 flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-emerald-400" /> Resumen Rápido
+            </h3>
+            <p className="text-emerald-100/90 text-[15px] leading-relaxed font-medium">
+              {result.explicacion_halajica.split('**Resumen Rápido:**')[1]?.split('**Análisis Detallado:**')[0]?.trim()}
+            </p>
+          </div>
+        )}
+
         {/* Basic Grid Info */}
         <div className="grid grid-cols-2 gap-4">
           {/* Seal Card */}
@@ -556,7 +568,9 @@ function ResultView({ result, onBack }: { result: any, onBack: () => void }) {
         <div className="bg-slate-800/80 p-6 rounded-3xl shadow-lg border border-slate-700/50 backdrop-blur-xl">
           <h3 className="text-white font-bold text-lg mb-3">Detalle del Análisis Halájico</h3>
           <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-line">
-            {result.explicacion_halajica || 'No se brindaron detalles adicionales de la lógica.'}
+            {result.explicacion_halajica?.includes('**Análisis Detallado:**') 
+              ? result.explicacion_halajica.split('**Análisis Detallado:**')[1]?.trim() 
+              : result.explicacion_halajica || 'No se brindaron detalles adicionales de la lógica.'}
           </p>
         </div>
 
