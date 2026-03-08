@@ -124,7 +124,11 @@ export default function Home() {
     formData.append('preferences', JSON.stringify(preferences));
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/scan';
+      // Use absolute backend URL in production to prevent Next.js 404 routing errors
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL 
+        ? `${process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '')}/api/scan` 
+        : '/api/scan';
+
       const res = await fetch(apiUrl, {
         method: 'POST',
         body: formData,
