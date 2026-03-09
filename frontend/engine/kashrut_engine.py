@@ -111,6 +111,9 @@ class KashrutEngine:
                 return response
             except Exception as e:
                 print(f"[Engine] Gemini call failed on attempt {attempt + 1}: {e}")
+                if self._is_quota_error(e):
+                    print("[Engine] Quota error detected. Bypassing retries.")
+                    raise e
                 # Exponential backoff
                 if attempt < max_retries - 1:
                     sleep_time = 2 ** attempt
@@ -154,6 +157,8 @@ class KashrutEngine:
             return self._parse_response(response)
         except Exception as e:
             print(f"[Engine] Primary model exhausted: {e}")
+            if self._is_quota_error(e):
+                return {"error": f"Error en análisis de imágenes: {str(e)}"}
             try:
                 # Try fallback model
                 print("[Engine] Attempting fallback model (pro)...")
