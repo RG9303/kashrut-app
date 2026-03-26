@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { Camera, Upload, AlertCircle, CheckCircle2, Smartphone, Focus, Leaf, Droplets, Beef, ShieldAlert, Wheat, ShieldQuestion, QrCode, XCircle } from 'lucide-react';
+import { Camera, Upload, AlertCircle, CheckCircle2, Smartphone, Focus, Leaf, Droplets, Beef, ShieldAlert, Wheat, ShieldQuestion, QrCode, XCircle, Menu } from 'lucide-react';
 
 export default function Home() {
   const [isScanning, setIsScanning] = useState(false);
@@ -282,7 +282,7 @@ export default function Home() {
       <div className="flex-1 w-full max-w-lg mx-auto lg:max-w-none flex flex-col h-full lg:sticky lg:top-10">
 
         <header className="w-full flex justify-between items-center mb-8">
-          <button className="text-2xl text-slate-300 hover:text-white transition">☰</button>
+          <Link href="/chaguim" className="text-2xl text-slate-300 hover:text-emerald-400 transition" aria-label="Abrir Guía Chaguim">☰</Link>
           <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
             KosherScan
           </h1>
