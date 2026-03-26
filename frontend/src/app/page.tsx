@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { Camera, Upload, AlertCircle, CheckCircle2, Smartphone, Focus, Leaf, Droplets, Beef, ShieldAlert, Wheat, ShieldQuestion, QrCode, XCircle } from 'lucide-react';
 
 export default function Home() {
@@ -19,6 +20,23 @@ export default function Home() {
   // User Profile State
   const [userOrigin, setUserOrigin] = useState('ashkenazi');
   const [userCountry, setUserCountry] = useState('México');
+
+  useEffect(() => {
+    const storedOrigin = localStorage.getItem('userOrigin');
+    const storedCountry = localStorage.getItem('userCountry');
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (storedOrigin) setUserOrigin(storedOrigin);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (storedCountry) setUserCountry(storedCountry);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('userOrigin', userOrigin);
+  }, [userOrigin]);
+
+  useEffect(() => {
+    localStorage.setItem('userCountry', userCountry);
+  }, [userCountry]);
 
   // Start Camera Stream
   const startCamera = async () => {
@@ -259,7 +277,7 @@ export default function Home() {
           <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
             KosherScan
           </h1>
-          <button className="text-2xl text-slate-300 hover:text-white transition">⚙️</button>
+          <Link href="/settings" className="text-2xl text-slate-300 hover:text-white transition">⚙️</Link>
         </header>
 
         <div className="w-full bg-slate-800/80 border border-slate-700/50 rounded-[2.5rem] p-8 lg:p-12 backdrop-blur-xl shadow-2xl flex flex-col items-center flex-grow">

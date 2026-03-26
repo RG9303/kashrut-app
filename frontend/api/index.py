@@ -105,35 +105,7 @@ async def scan_product(
     if not loaded_images and not barcode:
         raise HTTPException(status_code=400, detail="Must provide at least one image or a barcode")
 
-    # ----- CACHE LAYER -----
-    # Create a unique hash for this scan based on barcode + preferences + images + phase
-    cache_dir = "/tmp/kashrut_cache"
-    os.makedirs(cache_dir, exist_ok=True)
-    
-    hash_input = str(barcode) + json.dumps(prefs) + phase
-    if images:
-        for img in images:
-            # Re-read position for hashing without losing stream
-            await img.seek(0)
-            chunk = await img.read(8192) # just hash first 8k for speed
-            hash_input += chunk.hex()
-            await img.seek(0) # reset for PIL
-            
-    req_hash = hashlib.md5(hash_input.encode('utf-8')).hexdigest()
-    cache_file = os.path.join(cache_dir, f"{req_hash}.json")
-    
-    if os.path.exists(cache_file):
-        print(f"[API] Cache HIT for hash {req_hash}! Returning instant result.")
-        try:
-            with open(cache_file, 'r') as f:
-                return json.load(f)
-        except Exception:
-            pass # fallback to processing if cache is corrupted
-            
-    print(f"[API] Cache MISS for hash {req_hash}. Proceeding to AI...")
-    # -----------------------
-
-    # Flow
+    # Flow Initialization
     detected_barcode = barcode
     off_data = None
     
@@ -142,6 +114,37 @@ async def scan_product(
         print("[API] No barcode provided. Attempting to extract from image...")
         detected_barcode = kashrut_engine.extract_barcode(loaded_images[0])
         print(f"[API] Extracted barcode: {detected_barcode}")
+
+    # ----- CACHE LAYER -----
+    cache_dir = "/tmp/kashrut_cache"
+    os.makedirs(cache_dir, exist_ok=True)
+    
+    # If a barcode is present, the image does NOT influence the cache key (Universal Product Cache)
+    if detected_barcode:
+        hash_input = f"barcode:{detected_barcode}|prefs:{json.dumps(prefs, sort_keys=True)}|phase:{phase}"
+    else:
+        # Fallback: if no barcode, hash the image directly
+        hash_input = f"prefs:{json.dumps(prefs, sort_keys=True)}|phase:{phase}"
+        if images:
+            for img in images:
+                await img.seek(0)
+                chunk = await img.read(8192)
+                hash_input += chunk.hex()
+                await img.seek(0)
+                
+    req_hash = hashlib.md5(hash_input.encode('utf-8')).hexdigest()
+    cache_file = os.path.join(cache_dir, f"{req_hash}.json")
+    
+    if os.path.exists(cache_file):
+        print(f"[API] Cache HIT for hash {req_hash} (Input: {hash_input if detected_barcode else 'ImageHash'})! Returning instant result.")
+        try:
+            with open(cache_file, 'r') as f:
+                return json.load(f)
+        except Exception:
+            pass # fallback to processing if cache is corrupted
+            
+    print(f"[API] Cache MISS for hash {req_hash}. Proceeding to AI...")
+    # -----------------------
         
     # 2. Get data from OpenFoodFacts if we have a barcode
     if detected_barcode:
