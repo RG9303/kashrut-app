@@ -20,14 +20,22 @@ export default function Home() {
   // User Profile State
   const [userOrigin, setUserOrigin] = useState('ashkenazi');
   const [userCountry, setUserCountry] = useState('México');
+  const [chaguimAlerts, setChaguimAlerts] = useState('false');
+  const [kosherRecipes, setKosherRecipes] = useState('false');
 
   useEffect(() => {
     const storedOrigin = localStorage.getItem('userOrigin');
     const storedCountry = localStorage.getItem('userCountry');
+    const storedChaguim = localStorage.getItem('chaguimAlerts');
+    const storedRecipes = localStorage.getItem('kosherRecipes');
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (storedOrigin) setUserOrigin(storedOrigin);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (storedCountry) setUserCountry(storedCountry);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (storedChaguim) setChaguimAlerts(storedChaguim);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (storedRecipes) setKosherRecipes(storedRecipes);
   }, []);
 
   useEffect(() => {
@@ -189,7 +197,8 @@ export default function Home() {
 
     const preferences = {
       origen: userOrigin,
-      pais: userCountry
+      pais: userCountry,
+      kosherRecipes: kosherRecipes
     };
     formData.append('preferences', JSON.stringify(preferences));
 
@@ -463,6 +472,8 @@ export default function Home() {
       <div className="flex-1 w-full max-w-lg mx-auto lg:max-w-none h-full min-h-[500px]">
         {result ? (
           <ResultView result={result} onBack={() => setResult(null)} />
+        ) : chaguimAlerts === 'true' ? (
+          <ChaguimWidget userOrigin={userOrigin} />
         ) : (
           <div className="h-full min-h-[600px] flex flex-col items-center justify-center border-2 border-dashed border-slate-700/50 bg-slate-800/20 rounded-[2.5rem] p-12 text-slate-500">
             <div className="w-24 h-24 mb-6 rounded-full bg-slate-800/50 flex items-center justify-center">
@@ -642,12 +653,76 @@ function ResultView({ result, onBack }: { result: any, onBack: () => void }) {
           )}
         </div>
 
+        {/* Recipe Suggestion */}
+        {result.receta_sugerida && (
+          <div className="bg-gradient-to-br from-emerald-900/40 to-slate-800/80 p-6 rounded-3xl shadow-lg border border-emerald-500/40 backdrop-blur-xl mt-2 relative overflow-hidden">
+            <h3 className="text-emerald-400 font-bold text-lg mb-2 flex items-center gap-2">
+              <span className="text-2xl">👨‍🍳</span> {result.receta_sugerida.nombre}
+            </h3>
+            <p className="text-emerald-100/90 text-sm leading-relaxed">
+              {result.receta_sugerida.descripcion}
+            </p>
+          </div>
+        )}
+
         <button
           onClick={onBack}
           className="mt-2 w-full text-slate-400 font-bold py-5 hover:bg-slate-800 border border-transparent hover:border-slate-700 rounded-[2rem] transition-all"
         >
           ❮ Escanear Otro Producto
         </button>
+      </div>
+    </div>
+  );
+}
+
+function ChaguimWidget({ userOrigin }: { userOrigin: string }) {
+  // Hardcoded current upcoming holiday estimation
+  const daysLeft = 17;
+  
+  return (
+    <div className="h-full min-h-[600px] flex flex-col items-center justify-center p-6 lg:p-10 animate-in fade-in slide-in-from-right-8 duration-700">
+      <div className="w-full max-w-md bg-gradient-to-b from-slate-800 to-slate-900 border border-emerald-500/30 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl"></div>
+        
+        <div className="flex flex-col items-center text-center relative z-10">
+          <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mb-6 border border-emerald-500/40">
+            <span className="text-4xl">🍷</span>
+          </div>
+          
+          <h2 className="text-emerald-400 font-bold tracking-widest uppercase text-xs mb-2">Próxima Festividad</h2>
+          <h3 className="text-4xl font-black text-white mb-2 drop-shadow-md">Pesaj</h3>
+          
+          <div className="bg-slate-950/50 py-2 px-6 rounded-full border border-slate-700/50 mb-8 inline-block">
+            <span className="text-slate-300 font-medium">Faltan <span className="text-emerald-400 font-bold text-lg">{daysLeft}</span> días</span>
+          </div>
+          
+          <div className="w-full bg-slate-800/50 rounded-2xl p-5 border border-slate-700/50 text-left">
+            <h4 className="text-white font-bold mb-3 text-sm flex items-center gap-2">
+              <span className="bg-slate-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">📋</span>
+              Preparación ({userOrigin === 'ashkenazi' ? 'Ashkenazí' : 'Sefaradí'})
+            </h4>
+            <ul className="text-sm text-slate-400 space-y-2">
+              <li className="flex gap-2">
+                <span className="text-emerald-500 mt-0.5">•</span>
+                <span>Limpieza a fondo y venta de Jametz antes del 12 de Abril.</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-emerald-500 mt-0.5">•</span>
+                <span>{userOrigin === 'ashkenazi' ? 'Kitniyot (arroz, legumbres) no están permitidos.' : 'Kitniyot (arroz, frijoles) estricto según la costumbre sefaradí que se siga.'}</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-emerald-500 mt-0.5">•</span>
+                <span>Usa la cámara de KosherScan para certificar sellos de &quot;Kosher L&apos;Pesach&quot;.</span>
+              </li>
+            </ul>
+          </div>
+          
+          <button className="mt-6 w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl transition-all shadow-[0_8px_20px_rgba(16,185,129,0.2)]">
+            Ver Guía Completa Pesaj
+          </button>
+        </div>
       </div>
     </div>
   );

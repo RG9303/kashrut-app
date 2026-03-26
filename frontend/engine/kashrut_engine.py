@@ -56,7 +56,8 @@ Formato JSON Estricto:
   "caracteristicas_basicas": {"vegano": true/false, "sin_gluten": true/false, "sin_lacteos": true/false},
   "ingredientes_detectados": [{"nombre": "Ingrediente", "estatus": "Kosher/No Kosher/Dudoso/Precaución"}],
   "alertas": ["Lista de alertas. Usa 'Ninguno' si no hay alertas"],
-  "explicacion_halajica": "**Resumen Rápido:** [1-2 oraciones]\\n\\n**Análisis Detallado:** [Toda la justificación técnica...]"
+  "explicacion_halajica": "**Resumen Rápido:** [1-2 oraciones]\\n\\n**Análisis Detallado:** [Toda la justificación técnica...]",
+  "receta_sugerida": {"nombre": "Solo si se pide receta y es Kosher/Parve", "descripcion": "Instrucciones de la receta..."}
 }
 """
 
@@ -141,6 +142,8 @@ class KashrutEngine:
         if preferences:
             prompt += f"\n\nPREFERENCIAS DEL USUARIO:\n{json.dumps(preferences, ensure_ascii=False)}"
             prompt += "\nAjusta tu veredicto según estas preferencias (ej. si el usuario es estricto en Jalav Yisrael y el producto es Jalav Stam, indícalo)."
+            if str(preferences.get("kosherRecipes")).lower() == "true":
+                prompt += "\n\nRECETAS KOSHER: El usuario activó sugerencias de recetas. Si el producto resulta ser KOSHER o PARVE (y NO Dudoso ni No Kosher), incluye OBLIGATORIAMENTE en tu respuesta JSON el campo 'receta_sugerida' con un objeto JSON {\"nombre\": \"Nombre del platillo\", \"descripcion\": \"Breve descripción paso a paso de cómo usar este producto en una deliciosa receta Kosher\"}."
 
         prompt += "\nSi no se ve bien, avisa en 'alertas'."
         
@@ -324,6 +327,8 @@ class KashrutEngine:
         if preferences:
             prompt += f"\n\nPREFERENCIAS DEL USUARIO:\n{json.dumps(preferences, ensure_ascii=False)}"
             prompt += "\nAjusta tu veredicto según estas preferencias."
+            if str(preferences.get("kosherRecipes")).lower() == "true":
+                prompt += "\n\nRECETAS KOSHER: El usuario activó sugerencias de recetas. Si el producto es KOSHER o PARVE (y NO Dudoso ni No Kosher), incluye en tu respuesta JSON el campo 'receta_sugerida' con formato {\"nombre\": \"Nombre\", \"descripcion\": \"Breve paso a paso\"} usando este producto."
 
         prompt += """
         Instrucciones especiales para texto:
