@@ -2,11 +2,18 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { Camera, Upload, AlertCircle, CheckCircle2, Smartphone, Focus, Leaf, Droplets, Beef, ShieldAlert, Wheat, ShieldQuestion, QrCode, XCircle, Menu } from 'lucide-react';
+import { Camera, Upload, AlertCircle, CheckCircle2, Smartphone, Focus, Leaf, Droplets, Beef, ShieldAlert, Wheat, ShieldQuestion, QrCode, XCircle, Menu, History } from 'lucide-react';
+
+interface ScanItem {
+  id: number;
+  resultado: string;
+  hechsher: string;
+  barcode: string;
+}
 
 export default function Home() {
   const [isScanning, setIsScanning] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<any>(null); // Keeping any as it was there
 
   // Camera State
   const [isCameraActive, setIsCameraActive] = useState(false);
@@ -22,12 +29,14 @@ export default function Home() {
   const [userCountry, setUserCountry] = useState('México');
   const [chaguimAlerts, setChaguimAlerts] = useState('false');
   const [kosherRecipes, setKosherRecipes] = useState('false');
+  const [scanHistory, setScanHistory] = useState<ScanItem[]>([]);
 
   useEffect(() => {
     const storedOrigin = localStorage.getItem('userOrigin');
     const storedCountry = localStorage.getItem('userCountry');
     const storedChaguim = localStorage.getItem('chaguimAlerts');
     const storedRecipes = localStorage.getItem('kosherRecipes');
+    const storedHistory = localStorage.getItem('scanHistory');
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (storedOrigin) setUserOrigin(storedOrigin);
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -36,6 +45,12 @@ export default function Home() {
     if (storedChaguim) setChaguimAlerts(storedChaguim);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (storedRecipes) setKosherRecipes(storedRecipes);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (storedHistory) {
+      try {
+        setScanHistory(JSON.parse(storedHistory));
+      } catch (e) {}
+    }
   }, []);
 
   useEffect(() => {
@@ -252,6 +267,18 @@ export default function Home() {
       // Render Phase 2 
       setResult({ ...data, phase: 'detailed' });
 
+      setScanHistory(prev => {
+        const item = {
+          id: Date.now(),
+          resultado: data.resultado || 'Desconocido',
+          hechsher: data.sello_detectado?.nombre || 'Ninguno',
+          barcode: finalBarcode || '📸 Foto Escaneada'
+        };
+        const updated = [item, ...prev].slice(0, 5);
+        localStorage.setItem('scanHistory', JSON.stringify(updated));
+        return updated;
+      });
+
       if (isCameraActive) stopCamera(); 
     } catch (error: any) {
       console.error('Scan failed:', error);
@@ -276,10 +303,10 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col lg:flex-row p-4 lg:p-10 gap-8 max-w-[1400px] mx-auto relative">
-
-      {/* LEFT COLUMN: Scanner / Input */}
-      <div className="flex-1 w-full max-w-lg mx-auto lg:max-w-none flex flex-col h-full lg:sticky lg:top-10">
+    <main className="flex min-h-screen flex-col p-4 lg:p-10 gap-8 max-w-[1400px] mx-auto relative">
+      <div className="flex flex-col lg:flex-row gap-8 w-full">
+        {/* LEFT COLUMN: Scanner / Input */}
+        <div className="flex-1 w-full max-w-lg mx-auto lg:max-w-none flex flex-col h-full lg:sticky lg:top-10">
 
         <header className="w-full flex justify-between items-center mb-8">
           <Link href="/chaguim" className="text-2xl text-slate-300 hover:text-emerald-400 transition" aria-label="Abrir Guía Chaguim">☰</Link>
@@ -472,8 +499,6 @@ export default function Home() {
       <div className="flex-1 w-full max-w-lg mx-auto lg:max-w-none h-full min-h-[500px]">
         {result ? (
           <ResultView result={result} onBack={() => setResult(null)} />
-        ) : chaguimAlerts === 'true' ? (
-          <ChaguimWidget userOrigin={userOrigin} />
         ) : (
           <div className="h-full min-h-[600px] flex flex-col items-center justify-center border-2 border-dashed border-slate-700/50 bg-slate-800/20 rounded-[2.5rem] p-12 text-slate-500">
             <div className="w-24 h-24 mb-6 rounded-full bg-slate-800/50 flex items-center justify-center">
@@ -486,6 +511,21 @@ export default function Home() {
           </div>
         )}
       </div>
+      </div> {/* End Top Columns Wrapper */}
+
+      {/* BOTTOM WIDGETS */}
+      <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-8 mt-4">
+        {/* Scan History Widget */}
+        {scanHistory.length > 0 && (
+          <ScanHistoryWidget history={scanHistory} />
+        )}
+        
+        {/* Chaguim Widget */}
+        {chaguimAlerts === 'true' && (
+          <ChaguimWidget userOrigin={userOrigin} />
+        )}
+      </div>
+
     </main>
   );
 }
@@ -677,11 +717,19 @@ function ResultView({ result, onBack }: { result: any, onBack: () => void }) {
 }
 
 function ChaguimWidget({ userOrigin }: { userOrigin: string }) {
-  // Hardcoded current upcoming holiday estimation
-  const daysLeft = 17;
+  const [daysLeft, setDaysLeft] = useState(0);
+
+  useEffect(() => {
+    // Pesach starts evening of April 1, 2026.
+    const pesajDate = new Date('2026-04-01T18:00:00');
+    const today = new Date();
+    const diff = Math.ceil((pesajDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDaysLeft(diff > 0 ? diff : 0);
+  }, []);
   
   return (
-    <div className="h-full min-h-[600px] flex flex-col items-center justify-center p-6 lg:p-10 animate-in fade-in slide-in-from-right-8 duration-700">
+    <div className="w-full flex-grow flex flex-col items-center justify-center p-6 lg:p-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
       <div className="w-full max-w-md bg-gradient-to-b from-slate-800 to-slate-900 border border-emerald-500/30 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl"></div>
@@ -723,6 +771,37 @@ function ChaguimWidget({ userOrigin }: { userOrigin: string }) {
             Ver Guía Completa Pesaj
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ScanHistoryWidget({ history }: { history: ScanItem[] }) {
+  return (
+    <div className="w-full bg-slate-800/80 border border-slate-700/50 rounded-[2.5rem] p-8 shadow-xl relative overflow-hidden flex flex-col h-full animate-in fade-in slide-in-from-bottom-8 duration-500">
+      <h3 className="text-white font-bold text-xl mb-6 flex items-center gap-2">
+        <History className="w-6 h-6 text-emerald-400" />
+        Historial Reciente
+      </h3>
+      <div className="flex flex-col gap-4 overflow-y-auto pr-2 max-h-[400px]">
+        {history.map((item, idx) => {
+          const isKosher = item.resultado?.toUpperCase().includes('KOSHER') && !item.resultado?.toUpperCase().includes('NO');
+          const isDudoso = item.resultado?.toUpperCase().includes('DUDOSO');
+          const statusColor = isKosher ? 'text-emerald-400' : isDudoso ? 'text-yellow-400' : 'text-red-400';
+          const badgeClass = isKosher ? 'bg-emerald-500/10 border-emerald-500/20' : isDudoso ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-red-500/10 border-red-500/20';
+
+          return (
+            <div key={item.id} className="bg-slate-900/50 border border-slate-700/30 p-4 rounded-2xl flex justify-between items-center hover:border-slate-500/50 transition-colors">
+              <div className="flex flex-col">
+                <span className={`font-bold ${statusColor}`}>{item.resultado}</span>
+                <span className="text-slate-400 text-xs mt-1 font-mono">{item.barcode}</span>
+              </div>
+              <div className={`px-3 py-1 rounded-full border ${badgeClass}`}>
+                <span className={`font-bold text-xs ${statusColor}`}>{item.hechsher}</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

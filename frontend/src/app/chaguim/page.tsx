@@ -6,14 +6,17 @@ import { ArrowLeft, BookOpen, Clock, CheckCircle2, AlertTriangle, Calendar } fro
 
 export default function ChaguimPage() {
   const [userOrigin, setUserOrigin] = useState('ashkenazi');
+  const [daysLeft, setDaysLeft] = useState(0);
   
   useEffect(() => {
     const origin = localStorage.getItem('userOrigin');
     if (origin) setUserOrigin(origin);
+    const pesajDate = new Date('2026-04-01T18:00:00');
+    const today = new Date();
+    const diff = Math.ceil((pesajDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDaysLeft(diff > 0 ? diff : 0);
   }, []);
-
-  // Hardcoded for current upcoming holiday: Pesaj
-  const daysLeft = 17;
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-200 font-sans pb-20 selection:bg-emerald-500/30">
