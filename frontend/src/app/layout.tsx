@@ -14,6 +14,11 @@ const inter = Inter({
 export const metadata = {
   title: "KosherScan API Client",
   description: "Digital Mashgiach - AI powered Kashrut scanner",
+  manifest: "/manifest.json",
+};
+
+export const viewport = {
+  themeColor: "#10b981",
 };
 
 export default function RootLayout({
