@@ -329,9 +329,9 @@ export default function Home() {
               <div className="flex items-center gap-3 p-3.5 rounded-xl opacity-60 cursor-not-allowed text-slate-400 w-full text-left font-medium">
                 <span className="text-xl w-5 flex justify-center">👨‍🍳</span> Recetario Kosher <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded-full ml-auto font-bold uppercase tracking-widest border border-slate-700">Pronto</span>
               </div>
-              <div className="flex items-center gap-3 p-3.5 rounded-xl opacity-60 cursor-not-allowed text-slate-400 w-full text-left font-medium">
-                <span className="text-xl w-5 flex justify-center">📅</span> Calendario Hebreo <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded-full ml-auto font-bold uppercase tracking-widest border border-slate-700">Pronto</span>
-              </div>
+              <Link href="/calendario" className="flex items-center gap-3 p-3.5 rounded-xl hover:bg-slate-800/80 text-slate-300 hover:text-white transition-colors w-full text-left font-medium border border-transparent hover:border-slate-700/50">
+                <span className="text-xl w-5 flex justify-center">📅</span> Calendario Hebreo
+              </Link>
               <Link href="/logos" className="flex items-center gap-3 p-3.5 rounded-xl hover:bg-slate-800/80 text-slate-300 hover:text-white transition-colors w-full text-left font-medium border border-transparent hover:border-slate-700/50">
                 <span className="text-xl w-5 flex justify-center">🔖</span> Catálogo de Logos
               </Link>
