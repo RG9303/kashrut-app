@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Globe, MapPin, Search } from 'lucide-react';
 
@@ -98,6 +98,12 @@ export default function LogosPage() {
     }
   ];
 
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredLogos = searchTerm 
+    ? logos.filter(l => l.name.toLowerCase().includes(searchTerm.toLowerCase()) || l.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    : [];
+
   return (
     <div className="min-h-screen bg-slate-900 text-slate-200 font-sans pb-20 selection:bg-emerald-500/30">
       <div className="max-w-5xl mx-auto p-4 lg:p-8">
@@ -118,19 +124,58 @@ export default function LogosPage() {
         </div>
 
         {/* Search Header Design */}
-        <div className="bg-slate-800/50 p-6 rounded-3xl shadow-lg border border-slate-700/50 backdrop-blur-xl mb-10">
+        <div className="bg-slate-800/50 p-6 rounded-3xl shadow-lg border border-slate-700/50 backdrop-blur-xl mb-10 relative focus-within:border-emerald-500/50 transition-colors">
            <div className="flex items-center gap-4">
-             <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black">
+             <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black flex-shrink-0">
                <Search className="w-7 h-7" />
              </div>
-             <div>
-               <h2 className="text-xl font-bold text-white mb-1">Directorio Visual</h2>
-               <p className="text-slate-400 text-sm">Ubica y reconoce las agencias de certificación más confiables en los empaques mundiales.</p>
+             <div className="flex-grow">
+               <input 
+                 type="text"
+                 placeholder="Busca un sello (ej. OU, Star-K, etc.)"
+                 value={searchTerm}
+                 onChange={(e) => setSearchTerm(e.target.value)}
+                 className="w-full bg-transparent border-none text-white text-xl md:text-2xl font-bold placeholder-slate-500 focus:outline-none focus:ring-0 p-0"
+               />
+               <p className="text-slate-400 text-xs md:text-sm mt-1">Escribe cualquier letra para autocompletar e identificar rápidamente la agencia certificadora.</p>
              </div>
            </div>
         </div>
 
-        {/* Globales */}
+        {searchTerm ? (
+          <div className="mb-10 animate-in fade-in duration-300">
+            <h2 className="text-2xl font-bold text-emerald-400 mb-6 flex items-center gap-3">
+               Resultados de Búsqueda ({filteredLogos.length})
+            </h2>
+            {filteredLogos.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredLogos.map(logo => (
+                  <div key={logo.id} className="bg-slate-800/40 border border-emerald-500/40 rounded-3xl overflow-hidden hover:border-emerald-400 transition-all shadow-[0_4px_20px_rgba(16,185,129,0.15)] group">
+                    <div className={`h-32 w-full bg-gradient-to-br ${logo.color} flex items-center justify-center relative overflow-hidden group-hover:scale-105 transition-transform duration-700 ease-out`}>
+                       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                       <div className="relative z-10 drop-shadow-xl">{logo.symbol}</div>
+                    </div>
+                    <div className="p-6">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-bold text-lg text-white">{logo.name}</h3>
+                        <span className="text-[10px] bg-slate-900 border border-slate-700 px-2 py-1 rounded-md text-emerald-400 font-bold uppercase tracking-wider">{logo.category}</span>
+                      </div>
+                      <p className="text-sm text-slate-400 leading-relaxed">{logo.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16 bg-slate-800/20 rounded-3xl border border-slate-700/50">
+                <Search className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+                <h3 className="text-xl text-slate-300 font-bold">No se encontraron sellos</h3>
+                <p className="text-slate-500 mt-2">Intenta buscar con otro nombre o palabra clave.</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Globales */}
         <div className="mb-10">
           <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
              <Globe className="text-blue-400 w-6 h-6" /> Sellos Globales
@@ -195,6 +240,8 @@ export default function LogosPage() {
             ))}
           </div>
         </div>
+        </>
+        )}
 
       </div>
     </div>
