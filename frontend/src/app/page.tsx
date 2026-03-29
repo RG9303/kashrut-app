@@ -9,6 +9,7 @@ interface ScanItem {
   resultado: string;
   hechsher: string;
   barcode: string;
+  fullData?: any;
 }
 
 export default function Home() {
@@ -30,6 +31,7 @@ export default function Home() {
   const [chaguimAlerts, setChaguimAlerts] = useState('false');
   const [kosherRecipes, setKosherRecipes] = useState('false');
   const [scanHistory, setScanHistory] = useState<ScanItem[]>([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     const storedOrigin = localStorage.getItem('userOrigin');
@@ -272,7 +274,8 @@ export default function Home() {
           id: Date.now(),
           resultado: data.resultado || 'Desconocido',
           hechsher: data.sello_detectado?.nombre || 'Ninguno',
-          barcode: finalBarcode || '📸 Foto Escaneada'
+          barcode: finalBarcode || '📸 Foto Escaneada',
+          fullData: data
         };
         const updated = [item, ...prev].slice(0, 5);
         localStorage.setItem('scanHistory', JSON.stringify(updated));
@@ -304,12 +307,55 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col p-4 lg:p-10 gap-8 max-w-[1400px] mx-auto relative">
+      
+      {/* Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div className="fixed inset-0 z-50 flex">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)}></div>
+          <div className="relative w-80 max-w-[85vw] bg-slate-900 border-r border-slate-700/50 flex flex-col h-full shadow-2xl animate-in slide-in-from-left duration-300">
+            <div className="p-6 border-b border-slate-800 flex justify-between items-center">
+              <h2 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-emerald-600 tracking-tight">KosherScan</h2>
+              <button onClick={() => setIsSidebarOpen(false)} className="text-slate-400 hover:text-white transition-colors">
+                <XCircle className="w-6 h-6"/>
+              </button>
+            </div>
+            <div className="p-4 flex flex-col gap-2 overflow-y-auto">
+              <button onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-3 p-3.5 rounded-xl hover:bg-slate-800/80 text-slate-300 hover:text-white transition-colors w-full text-left font-medium border border-transparent hover:border-slate-700/50">
+                <Camera className="w-5 h-5 text-emerald-500" /> Inicio (Escáner)
+              </button>
+              <Link href="/chaguim" className="flex items-center gap-3 p-3.5 rounded-xl hover:bg-slate-800/80 text-slate-300 hover:text-white transition-colors w-full text-left font-medium border border-transparent hover:border-slate-700/50">
+                <span className="text-xl w-5 flex justify-center">🍷</span> Mega-Guía Chaguim
+              </Link>
+              <div className="flex items-center gap-3 p-3.5 rounded-xl opacity-60 cursor-not-allowed text-slate-400 w-full text-left font-medium">
+                <span className="text-xl w-5 flex justify-center">👨‍🍳</span> Recetario Kosher <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded-full ml-auto font-bold uppercase tracking-widest border border-slate-700">Pronto</span>
+              </div>
+              <div className="flex items-center gap-3 p-3.5 rounded-xl opacity-60 cursor-not-allowed text-slate-400 w-full text-left font-medium">
+                <span className="text-xl w-5 flex justify-center">📅</span> Calendario Hebreo <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded-full ml-auto font-bold uppercase tracking-widest border border-slate-700">Pronto</span>
+              </div>
+              <div className="flex items-center gap-3 p-3.5 rounded-xl opacity-60 cursor-not-allowed text-slate-400 w-full text-left font-medium">
+                <span className="text-xl w-5 flex justify-center">🔖</span> Catálogo de Logos <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded-full ml-auto font-bold uppercase tracking-widest border border-slate-700">Pronto</span>
+              </div>
+              
+              <div className="mt-8 pt-6 border-t border-slate-800">
+               <div className="flex flex-col gap-1 p-4 rounded-xl bg-gradient-to-br from-rose-500/10 to-transparent border border-rose-500/20 text-rose-300 w-full text-left opacity-90 backdrop-blur-sm shadow-inner cursor-not-allowed">
+                 <div className="flex items-center gap-2 font-bold mb-1">
+                   <ShieldAlert className="w-5 h-5 text-rose-500" /> Alertas de Kashrut
+                 </div>
+                 <p className="text-xs text-rose-400/80 leading-relaxed pr-2">Avisos urgentes sobre productos que perdieron certificación.</p>
+                 <span className="text-[10px] bg-rose-500/20 text-rose-300 px-2.5 py-1 rounded-full w-fit mt-2 font-bold uppercase tracking-wider border border-rose-500/30">Próximamente</span>
+               </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col lg:flex-row gap-8 w-full">
         {/* LEFT COLUMN: Scanner / Input */}
         <div className="flex-1 w-full max-w-lg mx-auto lg:max-w-none flex flex-col h-full lg:sticky lg:top-10">
 
         <header className="w-full flex justify-between items-center mb-8">
-          <Link href="/chaguim" className="text-2xl text-slate-300 hover:text-emerald-400 transition" aria-label="Abrir Guía Chaguim">☰</Link>
+          <button onClick={() => setIsSidebarOpen(true)} className="text-2xl text-slate-300 hover:text-emerald-400 transition transform hover:scale-110 active:scale-95" aria-label="Abrir Menú">☰</button>
           <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
             KosherScan
           </h1>
@@ -517,7 +563,7 @@ export default function Home() {
       <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-8 mt-4">
         {/* Scan History Widget */}
         {scanHistory.length > 0 && (
-          <ScanHistoryWidget history={scanHistory} />
+          <ScanHistoryWidget history={scanHistory} onRestore={(d) => setResult({ ...d, phase: 'detailed' })} />
         )}
         
         {/* Chaguim Widget */}
@@ -695,14 +741,7 @@ function ResultView({ result, onBack }: { result: any, onBack: () => void }) {
 
         {/* Recipe Suggestion */}
         {result.receta_sugerida && (
-          <div className="bg-gradient-to-br from-emerald-900/40 to-slate-800/80 p-6 rounded-3xl shadow-lg border border-emerald-500/40 backdrop-blur-xl mt-2 relative overflow-hidden">
-            <h3 className="text-emerald-400 font-bold text-lg mb-2 flex items-center gap-2">
-              <span className="text-2xl">👨‍🍳</span> {result.receta_sugerida.nombre}
-            </h3>
-            <p className="text-emerald-100/90 text-sm leading-relaxed">
-              {result.receta_sugerida.descripcion}
-            </p>
-          </div>
+          <RecipeCard recipe={result.receta_sugerida} />
         )}
 
         <button
@@ -767,16 +806,16 @@ function ChaguimWidget({ userOrigin }: { userOrigin: string }) {
             </ul>
           </div>
           
-          <button className="mt-6 w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl transition-all shadow-[0_8px_20px_rgba(16,185,129,0.2)]">
+          <Link href="/chaguim" className="mt-6 w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl transition-all shadow-[0_8px_20px_rgba(16,185,129,0.2)] text-center block">
             Ver Guía Completa Pesaj
-          </button>
+          </Link>
         </div>
       </div>
     </div>
   );
 }
 
-function ScanHistoryWidget({ history }: { history: ScanItem[] }) {
+function ScanHistoryWidget({ history, onRestore }: { history: ScanItem[], onRestore: (data: any) => void }) {
   return (
     <div className="w-full bg-slate-800/80 border border-slate-700/50 rounded-[2.5rem] p-8 shadow-xl relative overflow-hidden flex flex-col h-full animate-in fade-in slide-in-from-bottom-8 duration-500">
       <h3 className="text-white font-bold text-xl mb-6 flex items-center gap-2">
@@ -784,25 +823,92 @@ function ScanHistoryWidget({ history }: { history: ScanItem[] }) {
         Historial Reciente
       </h3>
       <div className="flex flex-col gap-4 overflow-y-auto pr-2 max-h-[400px]">
-        {history.map((item, idx) => {
+        {history.map((item) => {
           const isKosher = item.resultado?.toUpperCase().includes('KOSHER') && !item.resultado?.toUpperCase().includes('NO');
           const isDudoso = item.resultado?.toUpperCase().includes('DUDOSO');
           const statusColor = isKosher ? 'text-emerald-400' : isDudoso ? 'text-yellow-400' : 'text-red-400';
           const badgeClass = isKosher ? 'bg-emerald-500/10 border-emerald-500/20' : isDudoso ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-red-500/10 border-red-500/20';
 
           return (
-            <div key={item.id} className="bg-slate-900/50 border border-slate-700/30 p-4 rounded-2xl flex justify-between items-center hover:border-slate-500/50 transition-colors">
+            <div 
+              key={item.id} 
+              onClick={() => item.fullData && onRestore(item.fullData)}
+              className="bg-slate-900/50 border border-slate-700/30 p-4 rounded-2xl flex justify-between items-center hover:border-emerald-500/50 transition-colors cursor-pointer group shadow-sm hover:shadow-emerald-500/10"
+            >
               <div className="flex flex-col">
-                <span className={`font-bold ${statusColor}`}>{item.resultado}</span>
-                <span className="text-slate-400 text-xs mt-1 font-mono">{item.barcode}</span>
+                <span className={`font-bold transition-colors group-hover:text-emerald-300 ${statusColor}`}>{item.resultado}</span>
+                <span className="text-slate-400 text-xs mt-1 font-mono transition-colors group-hover:text-slate-300">{item.barcode}</span>
               </div>
-              <div className={`px-3 py-1 rounded-full border ${badgeClass}`}>
+              <div className={`px-3 py-1 rounded-full border transition-all ${badgeClass} group-hover:bg-opacity-20`}>
                 <span className={`font-bold text-xs ${statusColor}`}>{item.hechsher}</span>
               </div>
             </div>
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function RecipeCard({ recipe }: { recipe: any }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <div 
+      onClick={() => setIsExpanded(!isExpanded)}
+      className="bg-gradient-to-br from-emerald-900/40 to-slate-800/80 p-6 rounded-3xl shadow-lg border border-emerald-500/40 backdrop-blur-xl mt-2 relative overflow-hidden cursor-pointer transition-all hover:border-emerald-500/70 group"
+    >
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="text-emerald-400 font-bold text-lg flex items-center gap-2 group-hover:text-emerald-300 transition-colors">
+          <span className="text-2xl">👨‍🍳</span> {recipe.nombre}
+        </h3>
+        <span className="text-emerald-500/50 text-xs font-bold uppercase tracking-widest bg-emerald-500/10 px-3 py-1.5 rounded-full group-hover:bg-emerald-500/20 transition-colors">
+          {isExpanded ? 'Ocultar' : 'Ver Receta'}
+        </span>
+      </div>
+      <p className="text-emerald-100/90 text-sm leading-relaxed mb-4">
+        {recipe.descripcion}
+      </p>
+
+      {isExpanded && (
+        <div className="animate-in fade-in slide-in-from-top-4 duration-500 border-t border-emerald-500/20 pt-4 mt-2">
+           <div className="w-full h-40 bg-slate-900/80 rounded-2xl mb-5 overflow-hidden relative border border-emerald-500/20 shadow-inner">
+              <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80" alt="Receta" className="w-full h-full object-cover opacity-60 mix-blend-luminosity hover:mix-blend-normal hover:opacity-100 transition-all duration-700" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent pointer-events-none"></div>
+           </div>
+           
+           <h4 className="text-white font-bold tracking-tight mb-3 flex items-center gap-2">
+             <span className="bg-emerald-500/20 w-6 h-6 rounded-full flex items-center justify-center text-emerald-400 text-xs shadow-inner border border-emerald-500/30">1</span>
+             Ingredientes Requeridos:
+           </h4>
+           <ul className="pl-5 text-emerald-50 text-sm mb-6 space-y-2 font-medium">
+             {Array.isArray(recipe.ingredientes_receta) 
+                ? recipe.ingredientes_receta.map((ing: string, i: number) => (
+                   <li key={i} className="flex items-start gap-2">
+                     <span className="text-emerald-500 text-lg leading-none mt-0.5">•</span> {ing}
+                   </li>
+                 ))
+                : <li>{recipe.ingredientes_receta || 'No detallados.'}</li>
+             }
+           </ul>
+
+           <h4 className="text-white font-bold tracking-tight mb-3 flex items-center gap-2">
+             <span className="bg-emerald-500/20 w-6 h-6 rounded-full flex items-center justify-center text-emerald-400 text-xs shadow-inner border border-emerald-500/30">2</span>
+             Pasos de Preparación:
+           </h4>
+           <ol className="pl-2 text-emerald-50 text-sm space-y-3">
+             {Array.isArray(recipe.pasos_receta) 
+                ? recipe.pasos_receta.map((paso: string, i: number) => (
+                   <li key={i} className="flex gap-3 bg-slate-900/40 p-3 rounded-xl border border-slate-700/30">
+                     <span className="text-emerald-500 font-black opacity-60">0{i+1}</span>
+                     <span className="leading-relaxed">{paso}</span>
+                   </li>
+                 ))
+                : <li className="bg-slate-900/40 p-3 rounded-xl border border-slate-700/30">{recipe.pasos_receta || 'Sigue las instrucciones generales de cocina.'}</li>
+             }
+           </ol>
+        </div>
+      )}
     </div>
   );
 }
