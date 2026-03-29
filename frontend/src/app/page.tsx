@@ -274,7 +274,7 @@ export default function Home() {
           id: Date.now(),
           resultado: data.resultado || 'Desconocido',
           hechsher: data.sello_detectado?.nombre || 'Ninguno',
-          barcode: finalBarcode || '📸 Foto Escaneada',
+          barcode: finalBarcode || 'Análisis Visual',
           fullData: data
         };
         const updated = [item, ...prev].slice(0, 5);
@@ -740,7 +740,7 @@ function ResultView({ result, onBack }: { result: any, onBack: () => void }) {
         </div>
 
         {/* Recipe Suggestion */}
-        {result.receta_sugerida && (
+        {result.receta_sugerida && result.receta_sugerida.nombre && !result.receta_sugerida.nombre.includes('N/A') && (
           <RecipeCard recipe={result.receta_sugerida} />
         )}
 
@@ -860,7 +860,7 @@ function RecipeCard({ recipe }: { recipe: any }) {
     >
       <div className="flex justify-between items-center mb-2">
         <h3 className="text-emerald-400 font-bold text-lg flex items-center gap-2 group-hover:text-emerald-300 transition-colors">
-          <span className="text-2xl">👨‍🍳</span> {recipe.nombre}
+          {recipe.nombre}
         </h3>
         <span className="text-emerald-500/50 text-xs font-bold uppercase tracking-widest bg-emerald-500/10 px-3 py-1.5 rounded-full group-hover:bg-emerald-500/20 transition-colors">
           {isExpanded ? 'Ocultar' : 'Ver Receta'}
