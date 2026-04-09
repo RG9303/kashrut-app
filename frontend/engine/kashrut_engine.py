@@ -459,12 +459,8 @@ class KashrutEngine:
             response = self._try_generate_content(self.insect_model, content)
             return self._parse_response(response)
         except Exception as e:
-            print(f"Error en analyze_insects (primario): {e}")
-            try:
-                response = self._try_generate_content(self.fallback_model, content)
-                return self._parse_response(response)
-            except Exception as e2:
-                return {"error": f"Error en análisis de insectos: {str(e2)}"}
+            print(f"Error en analyze_insects: {e}")
+            return {"error": f"Error en análisis de insectos: {str(e)}"}
 
     def generate_color_heatmap(self, pil_image: Image.Image, preset: str = 'auto', sensitivity: int = 50) -> Image.Image:
         """
