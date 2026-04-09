@@ -81,6 +81,30 @@ Formato JSON Estricto:
 }
 """
 
+INSECT_SYSTEM_PROMPT = """
+Rol: Actúas como un experto entomólogo y Mashguiaj enfocado 100% en identificar insectos, fragmentos de insectos, huevos o signos de infestación en alimentos.
+Objetivo: Tu única misión es visualizar la imagen minuciosamente y retornar un JSON con la estructura detallada de los insectos encontrados para visualización y validación.
+
+Formato JSON Estricto:
+{
+  "insect_scanner": {
+    "confianza_global": "0-100%",
+    "resumen": "Resumen breve",
+    "detecciones": [
+      {
+        "bbox": [ymin_escala_1000, xmin_escala_1000, ymax_escala_1000, xmax_escala_1000],
+        "descripcion": "Descripción detallada",
+        "especie_aproximada": "Especie detectada",
+        "confianza": "0-100%",
+        "severidad": "Alta/Media/Baja",
+        "accion_recomendada": "Desechar"
+      }
+    ]
+  }
+}
+Nota: Las coordenadas 'bbox' deben normalizarse proporcionalmente al tamaño de imagen de 0 a 1000. Si la gran foto está completamente limpia y no hay NINGUN insecto u objeto extraño, la lista de 'detecciones' debe estar vacía y la 'confianza_global' en '0%'. PERO SI HAY ALGO, DEBES ANOTARLO.
+"""
+
 class KashrutEngine:
     def __init__(self):
         api_key = os.getenv("GOOGLE_API_KEY")
@@ -92,6 +116,7 @@ class KashrutEngine:
         self.fast_model = genai.GenerativeModel('gemini-flash-latest', system_instruction=FAST_SYSTEM_PROMPT)
         self.primary_model = genai.GenerativeModel('gemini-flash-latest', system_instruction=SYSTEM_PROMPT)
         self.fallback_model = genai.GenerativeModel('gemini-pro-latest', system_instruction=SYSTEM_PROMPT)
+        self.insect_model = genai.GenerativeModel('gemini-1.5-pro-latest', system_instruction=INSECT_SYSTEM_PROMPT)
 
     def _is_quota_error(self, error):
         """Check if the error is a quota/rate limit error."""
@@ -431,7 +456,7 @@ class KashrutEngine:
         content = [prompt] + images
 
         try:
-            response = self._try_generate_content(self.primary_model, content)
+            response = self._try_generate_content(self.insect_model, content)
             return self._parse_response(response)
         except Exception as e:
             print(f"Error en analyze_insects (primario): {e}")
