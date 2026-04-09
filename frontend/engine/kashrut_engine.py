@@ -116,7 +116,7 @@ class KashrutEngine:
         self.fast_model = genai.GenerativeModel('gemini-flash-latest', system_instruction=FAST_SYSTEM_PROMPT)
         self.primary_model = genai.GenerativeModel('gemini-flash-latest', system_instruction=SYSTEM_PROMPT)
         self.fallback_model = genai.GenerativeModel('gemini-pro-latest', system_instruction=SYSTEM_PROMPT)
-        self.insect_model = genai.GenerativeModel('gemini-1.5-pro-latest', system_instruction=INSECT_SYSTEM_PROMPT)
+        self.insect_model = genai.GenerativeModel('gemini-1.5-flash-latest', system_instruction=INSECT_SYSTEM_PROMPT)
 
     def _is_quota_error(self, error):
         """Check if the error is a quota/rate limit error."""
