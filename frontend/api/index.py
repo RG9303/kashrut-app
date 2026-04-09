@@ -218,6 +218,37 @@ async def scan_product(
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
+@app.post("/api/analyze_insects")
+async def analyze_insects(
+    images: List[UploadFile] = File(...),
+    kashrut_engine: KashrutEngine = Depends(get_engine)
+):
+    """Analiza imágenes para insectos."""
+    print(f"[API] POST /api/analyze_insects started. Images: {len(images)}")
+    loaded_images = []
+    
+    for img in images:
+        content = await img.read()
+        try:
+            loaded_images.append(Image.open(BytesIO(content)).convert("RGB"))
+        except Exception as e:
+            print(f"[API] Image load error: {e}")
+            continue
+            
+    if not loaded_images:
+        raise HTTPException(status_code=400, detail="Must provide at least one valid image.")
+        
+    try:
+        result = kashrut_engine.analyze_insects(loaded_images)
+        if "error" in result:
+             raise HTTPException(status_code=500, detail=result["error"])
+        return result
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Insect analysis failed: {str(e)}")
+
 # This ensures that when running locally with uvicorn directly, it still works.
 if __name__ == "__main__":
     uvicorn.run("api.index:app", host="0.0.0.0", port=8000, reload=True)
+
