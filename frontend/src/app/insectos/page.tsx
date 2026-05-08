@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useLanguage } from '@/hooks/useLanguage';
 import { Camera, Upload, ShieldAlert, CheckCircle2, ChevronLeft, Search, ZoomIn } from 'lucide-react';
 
 interface Deteccion {
@@ -71,7 +72,7 @@ const TEXTS = {
 };
 
 export default function Insectos() {
-  const [lang, setLang] = useState<'esp' | 'eng'>('esp');
+  const { lang } = useLanguage();
   const t = TEXTS[lang];
 
   const [isScanning, setIsScanning] = useState(false);
@@ -184,22 +185,6 @@ export default function Insectos() {
           <h1 className="text-2xl lg:text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 flex items-center gap-2">
              {t.title}
           </h1>
-        </div>
-        
-        {/* Language Toggle */}
-        <div className="flex bg-slate-800 rounded-lg p-1">
-          <button 
-            onClick={() => setLang('esp')}
-            className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${lang === 'esp' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
-          >
-            ESP
-          </button>
-          <button 
-            onClick={() => setLang('eng')}
-            className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${lang === 'eng' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
-          >
-            ENG
-          </button>
         </div>
       </header>
 

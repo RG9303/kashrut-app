@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useLanguage } from '@/hooks/useLanguage';
 import Link from 'next/link';
 import { Camera, Upload, AlertCircle, CheckCircle2, Smartphone, Focus, Leaf, Droplets, Beef, ShieldAlert, Wheat, ShieldQuestion, QrCode, XCircle, Menu, History } from 'lucide-react';
 
@@ -12,7 +13,161 @@ interface ScanItem {
   fullData?: any;
 }
 
+
+const TEXTS = {
+  esp: {
+    sidebarTitle: "Inicio (Escáner)",
+    megaGuide: "Mega-Guía Chaguim",
+    kosherRecipe: "Recetario Kosher",
+    soon: "Pronto",
+    hebrewCalendar: "Calendario Hebreo",
+    logosCatalog: "Catálogo de Logos",
+    insectScanner: "Escáner de Insectos",
+    kashrutAlerts: "Alertas de Kashrut",
+    kashrutAlertsDesc: "Avisos urgentes sobre productos que perdieron certificación.",
+    analyzeProduct: "Analizar Producto",
+    photoOrCode: "Fotografía el producto o ingresa su código",
+    makeSureLabels: "Asegúrate de que etiquetas sean legibles",
+    analyzingAI: "Analizando IA...",
+    activateCamera: "Activar Cámara",
+    stopCamera: "Detener Cámara",
+    capture: "Capturar",
+    orAlternatives: "O Alternativas",
+    uploadGallery: "Subir desde Galería",
+    insertBarcode: "Insertar Código Barras (EAN/UPC)",
+    search: "Buscar",
+    custom: "Costumbre",
+    ashkenazi: "Ashkenazí",
+    sephardi: "Sefaradí",
+    country: "País",
+    mexico: "México",
+    usa: "Estados Unidos",
+    argentina: "Argentina",
+    israel: "Israel",
+    spain: "España",
+    otherCountry: "Otro País",
+    importantNote: "Nota importante:",
+    importantNoteDesc1: "{t.importantNoteDesc1}",
+    importantNoteDesc2: "{t.importantNoteDesc2}",
+    importantNoteDesc3: "{t.importantNoteDesc3}",
+    waitingAnalysis: "Esperando Análisis",
+    scanProductCamera: "{t.scanProductCamera}",
+    finalStatus: "Estatus Final",
+    aiConfidence: "Certeza IA",
+    quickSummary: "Resumen Rápido",
+    seal: "Sello",
+    none: "Ninguno",
+    category: "Categoría",
+    openFoodFacts: "Registro OpenFoodFacts",
+    product: "Producto",
+    unknown: "Desconocido",
+    brand: "Marca",
+    relevantAlerts: "Alertas Relevantes",
+    additionalFilters: "Filtros Adicionales",
+    vegan: "Vegano",
+    glutenFree: "Sin Gluten",
+    dairyFree: "Sin Lácteos",
+    dietInfoNA: "Información de dietas no disponible",
+    halachicDetail: "Detalle del Análisis Halájico",
+    draftingHalachic: "{t.draftingHalachic}",
+    noLogicDetails: "No se brindaron detalles adicionales de la lógica.",
+    scanAnother: "{t.scanAnother}",
+    recentHistory: "{t.recentHistory}",
+    hide: "Ocultar",
+    viewRecipe: "Ver Receta",
+    requiredIngredients: "Ingredientes Requeridos",
+    noDetailed: "No detallados.",
+    prepSteps: "Pasos de Preparación",
+    generalInstructions: "Sigue las instrucciones generales de cocina.",
+    nextHoliday: "{t.nextHoliday}",
+    daysLeft: "Faltan",
+    days: "días",
+    preparation: "Preparación",
+    pesachPrep1: "{t.pesachPrep1}",
+    pesachPrep2Ashk: "Kitniyot (arroz, legumbres) no están permitidos.",
+    pesachPrep2Sef: "Kitniyot (arroz, frijoles) estricto según la costumbre sefaradí que se siga.",
+    pesachPrep3: "Usa la cámara de KosherScan para certificar sellos de \"Kosher L'Pesach\".",
+    viewFullGuide: "{t.viewFullGuide}"
+  },
+  eng: {
+    sidebarTitle: "Home (Scanner)",
+    megaGuide: "Mega-Guide Chaguim",
+    kosherRecipe: "Kosher Recipes",
+    soon: "Soon",
+    hebrewCalendar: "Hebrew Calendar",
+    logosCatalog: "Logos Catalog",
+    insectScanner: "Insect Scanner",
+    kashrutAlerts: "Kashrut Alerts",
+    kashrutAlertsDesc: "Urgent notices about products that lost certification.",
+    analyzeProduct: "Analyze Product",
+    photoOrCode: "Photograph the product or enter its code",
+    makeSureLabels: "Make sure labels are readable",
+    analyzingAI: "Analyzing AI...",
+    activateCamera: "Activate Camera",
+    stopCamera: "Stop Camera",
+    capture: "Capture",
+    orAlternatives: "Or Alternatives",
+    uploadGallery: "Upload from Gallery",
+    insertBarcode: "Insert Barcode (EAN/UPC)",
+    search: "Search",
+    custom: "Custom",
+    ashkenazi: "Ashkenazi",
+    sephardi: "Sephardic",
+    country: "Country",
+    mexico: "Mexico",
+    usa: "United States",
+    argentina: "Argentina",
+    israel: "Israel",
+    spain: "Spain",
+    otherCountry: "Other Country",
+    importantNote: "Important Note:",
+    importantNoteDesc1: "This artificial intelligence analysis is a technological assistance tool for reference.",
+    importantNoteDesc2: "It does not substitute the opinion or review of a competent Rabbinic authority in any way.",
+    importantNoteDesc3: "When in doubt about the Kashrut of an ingredient or product, always consult your trusted Mashgiach or expert Rabbi.",
+    waitingAnalysis: "Waiting for Analysis",
+    scanProductCamera: "Scan a product with the camera on the left or enter its barcode to break down the result here.",
+    finalStatus: "Final Status",
+    aiConfidence: "AI Confidence",
+    quickSummary: "Quick Summary",
+    seal: "Seal",
+    none: "None",
+    category: "Category",
+    openFoodFacts: "OpenFoodFacts Record",
+    product: "Product",
+    unknown: "Unknown",
+    brand: "Brand",
+    relevantAlerts: "Relevant Alerts",
+    additionalFilters: "Additional Filters",
+    vegan: "Vegan",
+    glutenFree: "Gluten Free",
+    dairyFree: "Dairy Free",
+    dietInfoNA: "Diet information not available",
+    halachicDetail: "Halachic Analysis Detail",
+    draftingHalachic: "Drafting detailed halachic breakdown...",
+    noLogicDetails: "No additional logic details were provided.",
+    scanAnother: "Scan Another Product",
+    recentHistory: "Recent History",
+    hide: "Hide",
+    viewRecipe: "View Recipe",
+    requiredIngredients: "Required Ingredients",
+    noDetailed: "Not detailed.",
+    prepSteps: "Preparation Steps",
+    generalInstructions: "Follow general cooking instructions.",
+    nextHoliday: "Next Holiday",
+    daysLeft: "Remaining",
+    days: "days",
+    preparation: "Preparation",
+    pesachPrep1: "Thorough cleaning and sale of Chametz before April 12.",
+    pesachPrep2Ashk: "Kitniyot (rice, legumes) are not allowed.",
+    pesachPrep2Sef: "Kitniyot (rice, beans) strict according to the Sephardic custom followed.",
+    pesachPrep3: "Use the KosherScan camera to certify \"Kosher L'Pesach\" seals.",
+    viewFullGuide: "View Full Pesach Guide"
+  }
+};
+
 export default function Home() {
+  const { lang } = useLanguage();
+  const t = TEXTS[lang];
   const [isScanning, setIsScanning] = useState(false);
   const [result, setResult] = useState<any>(null); // Keeping any as it was there
 
@@ -272,8 +427,8 @@ export default function Home() {
       setScanHistory(prev => {
         const item = {
           id: Date.now(),
-          resultado: data.resultado || 'Desconocido',
-          hechsher: data.sello_detectado?.nombre || 'Ninguno',
+          resultado: data.resultado || t.unknown,
+          hechsher: data.sello_detectado?.nombre || t.none,
           barcode: finalBarcode || 'Análisis Visual',
           fullData: data
         };
@@ -327,7 +482,7 @@ export default function Home() {
                 <span className="text-xl w-5 flex justify-center">🍷</span> Mega-Guía Chaguim
               </Link>
               <div className="flex items-center gap-3 p-3.5 rounded-xl opacity-60 cursor-not-allowed text-slate-400 w-full text-left font-medium">
-                <span className="text-xl w-5 flex justify-center">👨‍🍳</span> Recetario Kosher <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded-full ml-auto font-bold uppercase tracking-widest border border-slate-700">Pronto</span>
+                <span className="text-xl w-5 flex justify-center">👨‍🍳</span> Recetario Kosher <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded-full ml-auto font-bold uppercase tracking-widest border border-slate-700">{t.soon}</span>
               </div>
               <Link href="/calendario" className="flex items-center gap-3 p-3.5 rounded-xl hover:bg-slate-800/80 text-slate-300 hover:text-white transition-colors w-full text-left font-medium border border-transparent hover:border-slate-700/50">
                 <span className="text-xl w-5 flex justify-center">📅</span> Calendario Hebreo
@@ -344,8 +499,8 @@ export default function Home() {
                  <div className="flex items-center gap-2 font-bold mb-1">
                    <ShieldAlert className="w-5 h-5 text-rose-500" /> Alertas de Kashrut
                  </div>
-                 <p className="text-xs text-rose-400/80 leading-relaxed pr-2">Avisos urgentes sobre productos que perdieron certificación.</p>
-                 <span className="text-[10px] bg-rose-500/20 text-rose-300 px-2.5 py-1 rounded-full w-fit mt-2 font-bold uppercase tracking-wider border border-rose-500/30">Próximamente</span>
+                 <p className="text-xs text-rose-400/80 leading-relaxed pr-2">{t.kashrutAlertsDesc}</p>
+                 <span className="text-[10px] bg-rose-500/20 text-rose-300 px-2.5 py-1 rounded-full w-fit mt-2 font-bold uppercase tracking-wider border border-rose-500/30">{t.soon}</span>
                </div>
               </div>
             </div>
@@ -367,16 +522,16 @@ export default function Home() {
 
         <div className="w-full bg-slate-800/80 border border-slate-700/50 rounded-[2.5rem] p-8 lg:p-12 backdrop-blur-xl shadow-2xl flex flex-col items-center flex-grow">
 
-          <h2 className="text-3xl font-bold mt-2 mb-2 tracking-tight text-white text-center">Analizar Producto</h2>
+          <h2 className="text-3xl font-bold mt-2 mb-2 tracking-tight text-white text-center">{t.analyzeProduct}</h2>
 
           <div className="flex flex-col gap-2 mt-4 mb-8 text-slate-400 text-sm">
             <div className="flex items-center justify-center gap-2">
               <Smartphone className="w-4 h-4 text-emerald-400" />
-              <span>Fotografía el producto o ingresa su código</span>
+              <span>{t.photoOrCode}</span>
             </div>
             <div className="flex items-center justify-center gap-2">
               <Focus className="w-4 h-4 text-emerald-400" />
-              <span>Asegúrate de que etiquetas sean legibles</span>
+              <span>{t.makeSureLabels}</span>
             </div>
           </div>
 
@@ -411,7 +566,7 @@ export default function Home() {
             {isScanning && (
               <div className="absolute inset-0 bg-emerald-900/40 backdrop-blur-md flex flex-col items-center justify-center z-20">
                 <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                <span className="font-bold animate-pulse text-emerald-100 drop-shadow-lg text-lg">Analizando IA...</span>
+                <span className="font-bold animate-pulse text-emerald-100 drop-shadow-lg text-lg">{t.analyzingAI}</span>
               </div>
             )}
 
@@ -441,7 +596,7 @@ export default function Home() {
                   onClick={stopCamera}
                   disabled={isScanning}
                   className="bg-slate-700 hover:bg-slate-600 text-white font-semibold px-5 py-4 rounded-2xl transition-all active:scale-95 flex items-center justify-center"
-                  title="Detener Cámara"
+                  title={t.stopCamera}
                 >
                   <XCircle className="w-6 h-6" />
                 </button>
@@ -458,7 +613,7 @@ export default function Home() {
 
           <div className="w-full flex items-center gap-4 my-6 opacity-50">
             <div className="h-px bg-slate-500 flex-1"></div>
-            <span className="text-sm font-medium uppercase tracking-wider text-slate-300">O Alternativas</span>
+            <span className="text-sm font-medium uppercase tracking-wider text-slate-300">{t.orAlternatives}</span>
             <div className="h-px bg-slate-500 flex-1"></div>
           </div>
 
@@ -487,7 +642,7 @@ export default function Home() {
                   type="text"
                   value={barcode}
                   onChange={(e) => setBarcode(e.target.value)}
-                  placeholder="Insertar Código Barras (EAN/UPC)"
+                  placeholder={t.insertBarcode}
                   className="w-full bg-slate-900 border border-slate-700 text-white rounded-2xl py-3.5 pl-10 pr-4 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
                 />
               </div>
@@ -504,32 +659,32 @@ export default function Home() {
           {/* Configuración de Perfil (Ashkenazi/Sefaradí, País) */}
           <div className="w-full flex items-center justify-between gap-4 mt-2 p-4 bg-slate-900/50 rounded-2xl border border-slate-700/50">
             <div className="flex flex-col flex-1">
-              <label className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Costumbre</label>
+              <label className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">{t.custom}</label>
               <select
                 value={userOrigin}
                 onChange={(e) => setUserOrigin(e.target.value)}
                 className="bg-transparent text-white font-medium focus:outline-none appearance-none cursor-pointer"
               >
-                <option value="ashkenazi" className="bg-slate-800">Ashkenazí</option>
-                <option value="sefaradi" className="bg-slate-800">Sefaradí</option>
+                <option value="ashkenazi" className="bg-slate-800">{t.ashkenazi}</option>
+                <option value="sefaradi" className="bg-slate-800">{t.sephardi}</option>
               </select>
             </div>
 
             <div className="w-px h-8 bg-slate-700"></div>
 
             <div className="flex flex-col flex-1 pl-2">
-              <label className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">País</label>
+              <label className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">{t.country}</label>
               <select
                 value={userCountry}
                 onChange={(e) => setUserCountry(e.target.value)}
                 className="bg-transparent text-white font-medium focus:outline-none appearance-none cursor-pointer"
               >
-                <option value="México" className="bg-slate-800">México</option>
-                <option value="Estados Unidos" className="bg-slate-800">Estados Unidos</option>
-                <option value="Argentina" className="bg-slate-800">Argentina</option>
-                <option value="Israel" className="bg-slate-800">Israel</option>
-                <option value="España" className="bg-slate-800">España</option>
-                <option value="Otro" className="bg-slate-800">Otro País</option>
+                <option value="México" className="bg-slate-800">{t.mexico}</option>
+                <option value="Estados Unidos" className="bg-slate-800">{t.usa}</option>
+                <option value="Argentina" className="bg-slate-800">{t.argentina}</option>
+                <option value="Israel" className="bg-slate-800">{t.israel}</option>
+                <option value="España" className="bg-slate-800">{t.spain}</option>
+                <option value="Otro" className="bg-slate-800">{t.otherCountry}</option>
               </select>
             </div>
           </div>
@@ -538,7 +693,7 @@ export default function Home() {
           <div className="mt-8 pt-5 border-t border-slate-700 flex items-start gap-3 w-full opacity-70">
             <ShieldQuestion className="w-5 h-5 text-emerald-500/80 flex-shrink-0 mt-0.5" />
             <p className="text-[11px] text-slate-300 leading-relaxed">
-              <strong>Nota importante:</strong> Este análisis de inteligencia artificial es una herramienta de asistencia tecnológica de referencia. <strong>No sustituye de ninguna manera el dictamen ni la revisión de una autoridad rabínica competente.</strong> En caso de duda sobre la Kashrut de un ingrediente o producto, consulte siempre a su Mashgiach o Rabino experto de confianza.
+              <strong>{t.importantNote}</strong> {t.importantNoteDesc1} <strong>{t.importantNoteDesc2}</strong> {t.importantNoteDesc3}
             </p>
           </div>
         </div>
@@ -547,15 +702,15 @@ export default function Home() {
       {/* RIGHT COLUMN: Results */}
       <div className="flex-1 w-full max-w-lg mx-auto lg:max-w-none h-full min-h-[500px]">
         {result ? (
-          <ResultView result={result} onBack={() => setResult(null)} />
+          <ResultView result={result} onBack={() => setResult(null)} t={t} />
         ) : (
           <div className="h-full min-h-[600px] flex flex-col items-center justify-center border-2 border-dashed border-slate-700/50 bg-slate-800/20 rounded-[2.5rem] p-12 text-slate-500">
             <div className="w-24 h-24 mb-6 rounded-full bg-slate-800/50 flex items-center justify-center">
               <Leaf className="w-10 h-10 opacity-30" />
             </div>
-            <h3 className="text-xl font-medium text-slate-400 mb-2 text-center">Esperando Análisis</h3>
+            <h3 className="text-xl font-medium text-slate-400 mb-2 text-center">{t.waitingAnalysis}</h3>
             <p className="text-sm text-center max-w-xs text-slate-500">
-              Escanea un producto con la cámara de la izquierda o introduce su código de barras para desglosar el resultado aquí.
+              {t.scanProductCamera}
             </p>
           </div>
         )}
@@ -566,12 +721,12 @@ export default function Home() {
       <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-8 mt-4">
         {/* Scan History Widget */}
         {scanHistory.length > 0 && (
-          <ScanHistoryWidget history={scanHistory} onRestore={(d) => setResult({ ...d, phase: 'detailed' })} />
+          <ScanHistoryWidget history={scanHistory} onRestore={(d) => setResult({ ...d, phase: 'detailed' })} t={t} />
         )}
         
         {/* Chaguim Widget */}
         {chaguimAlerts === 'true' && (
-          <ChaguimWidget userOrigin={userOrigin} />
+          <ChaguimWidget userOrigin={userOrigin} t={t} />
         )}
       </div>
 
@@ -579,7 +734,7 @@ export default function Home() {
   );
 }
 
-function ResultView({ result, onBack }: { result: any, onBack: () => void }) {
+function ResultView({ result, onBack, t }: { result: any, onBack: () => void, t: any }) {
   const status = result.resultado?.toUpperCase() || 'DUDOSO';
   const isKosher = status.includes('KOSHER') && !status.includes('NO');
 
@@ -596,13 +751,13 @@ function ResultView({ result, onBack }: { result: any, onBack: () => void }) {
         </div>
 
         <div className="flex flex-col relative z-10">
-          <span className="text-sm font-semibold uppercase tracking-widest opacity-80 mb-1">Estatus Final</span>
+          <span className="text-sm font-semibold uppercase tracking-widest opacity-80 mb-1">{t.finalStatus}</span>
           <div className="flex items-center gap-3 text-4xl font-black tracking-tight drop-shadow-md">
             {isKosher ? <CheckCircle2 className="w-10 h-10" /> : <ShieldAlert className="w-10 h-10" />}
             {status}
           </div>
           <div className="mt-4 flex flex-col backdrop-blur-md bg-white/20 px-4 py-3 rounded-xl text-white/90 border border-white/20 max-w-sm">
-            <span className="font-bold text-xs uppercase tracking-wider mb-1 opacity-80">Certeza IA</span>
+            <span className="font-bold text-xs uppercase tracking-wider mb-1 opacity-80">{t.aiConfidence}</span>
             <span className="font-medium text-sm leading-relaxed">{result.confianza_analisis || 'N/A'}</span>
           </div>
         </div>
@@ -626,16 +781,16 @@ function ResultView({ result, onBack }: { result: any, onBack: () => void }) {
         <div className="grid grid-cols-2 gap-4">
           {/* Seal Card */}
           <div className="bg-slate-800/80 p-6 rounded-3xl shadow-lg border border-slate-700/50 backdrop-blur-xl">
-            <span className="text-slate-400 font-semibold text-xs uppercase tracking-wider mb-2 block">Sello</span>
+            <span className="text-slate-400 font-semibold text-xs uppercase tracking-wider mb-2 block">{t.seal}</span>
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center font-black text-xl border border-emerald-500/20 shadow-inner">
                 {result.sello_detectado?.nombre ? result.sello_detectado.nombre.substring(0, 2).toUpperCase() : '??'}
               </div>
               <div className="flex flex-col">
                 <div className="font-bold text-lg text-white leading-tight">
-                  {result.sello_detectado?.nombre || 'Ninguno'}
+                  {result.sello_detectado?.nombre || t.none}
                 </div>
-                {result.sello_detectado?.nombre && result.sello_detectado.nombre !== 'Ninguno' && (
+                {result.sello_detectado?.nombre && result.sello_detectado.nombre !== t.none && (
                   <span className="text-xs text-slate-400 font-medium">
                     {result.sello_detectado.pais || ''} • {result.sello_detectado.confianza || ''}
                   </span>
@@ -646,7 +801,7 @@ function ResultView({ result, onBack }: { result: any, onBack: () => void }) {
 
           {/* Category Card */}
           <div className="bg-slate-800/80 p-6 rounded-3xl shadow-lg border border-slate-700/50 backdrop-blur-xl">
-            <span className="text-slate-400 font-semibold text-xs uppercase tracking-wider mb-2 block">Categoría</span>
+            <span className="text-slate-400 font-semibold text-xs uppercase tracking-wider mb-2 block">{t.category}</span>
             <div className="flex items-center gap-3 text-lg font-bold text-white leading-tight">
               <span className="text-emerald-400 bg-emerald-500/10 p-2.5 rounded-2xl border border-emerald-500/20">
                 {result.categoria?.includes('Parve') ? <Leaf className="w-6 h-6" /> :
@@ -666,11 +821,11 @@ function ResultView({ result, onBack }: { result: any, onBack: () => void }) {
             </h3>
             <div className="flex flex-col gap-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-slate-400">Producto</span>
-                <span className="text-white font-medium text-right">{result.off_data.product_name || 'Desconocido'}</span>
+                <span className="text-slate-400">{t.product}</span>
+                <span className="text-white font-medium text-right">{result.off_data.product_name || t.unknown}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Marca</span>
+                <span className="text-slate-400">{t.brand}</span>
                 <span className="text-white font-medium text-right">{result.off_data.brands || 'N/A'}</span>
               </div>
             </div>
@@ -696,7 +851,7 @@ function ResultView({ result, onBack }: { result: any, onBack: () => void }) {
 
         {/* Characteristics */}
         <div className="bg-slate-800/80 p-6 rounded-3xl shadow-lg border border-slate-700/50 backdrop-blur-xl">
-          <span className="text-slate-400 font-semibold text-xs uppercase tracking-wider mb-4 block">Filtros Adicionales</span>
+          <span className="text-slate-400 font-semibold text-xs uppercase tracking-wider mb-4 block">{t.additionalFilters}</span>
           <div className="flex flex-wrap gap-2">
             {result.caracteristicas_basicas?.vegano && (
               <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-4 py-2.5 rounded-full font-bold text-sm flex items-center gap-2 shadow-inner">
@@ -714,14 +869,14 @@ function ResultView({ result, onBack }: { result: any, onBack: () => void }) {
               </span>
             )}
             {!result.caracteristicas_basicas?.vegano && !result.caracteristicas_basicas?.sin_gluten && !result.caracteristicas_basicas?.sin_lacteos && (
-              <span className="text-slate-500 italic text-sm">Información de dietas no disponible</span>
+              <span className="text-slate-500 italic text-sm">{t.dietInfoNA}</span>
             )}
           </div>
         </div>
 
         {/* Halachic Explanation */}
         <div className="bg-slate-800/80 p-6 rounded-3xl shadow-lg border border-slate-700/50 backdrop-blur-xl relative overflow-hidden">
-          <h3 className="text-white font-bold text-lg mb-3">Detalle del Análisis Halájico</h3>
+          <h3 className="text-white font-bold text-lg mb-3">{t.halachicDetail}</h3>
           
           {result.phase === 'fast' ? (
             <div className="flex flex-col gap-3 animate-pulse">
@@ -730,35 +885,35 @@ function ResultView({ result, onBack }: { result: any, onBack: () => void }) {
               <div className="h-4 bg-slate-700/50 rounded w-4/6"></div>
               <div className="mt-2 flex items-center gap-2 text-emerald-400/80 text-sm font-medium">
                 <div className="w-4 h-4 border-2 border-emerald-500/30 border-t-emerald-400 rounded-full animate-spin"></div>
-                Redactando desglose halájico detallado...
+                {t.draftingHalachic}
               </div>
             </div>
           ) : (
             <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-line animate-in fade-in duration-700">
               {result.explicacion_halajica?.includes('**Análisis Detallado:**') 
                 ? result.explicacion_halajica.split('**Análisis Detallado:**')[1]?.trim() 
-                : result.explicacion_halajica || 'No se brindaron detalles adicionales de la lógica.'}
+                : result.explicacion_halajica || t.noLogicDetails}
             </p>
           )}
         </div>
 
         {/* Recipe Suggestion */}
         {result.receta_sugerida && result.receta_sugerida.nombre && !result.receta_sugerida.nombre.includes('N/A') && (
-          <RecipeCard recipe={result.receta_sugerida} />
+          <RecipeCard recipe={result.receta_sugerida} t={t} />
         )}
 
         <button
           onClick={onBack}
           className="mt-2 w-full text-slate-400 font-bold py-5 hover:bg-slate-800 border border-transparent hover:border-slate-700 rounded-[2rem] transition-all"
         >
-          ❮ Escanear Otro Producto
+          ❮ {t.scanAnother}
         </button>
       </div>
     </div>
   );
 }
 
-function ChaguimWidget({ userOrigin }: { userOrigin: string }) {
+function ChaguimWidget({ userOrigin, t }: { userOrigin: string, t: any }) {
   const [daysLeft, setDaysLeft] = useState(0);
 
   useEffect(() => {
@@ -781,36 +936,36 @@ function ChaguimWidget({ userOrigin }: { userOrigin: string }) {
             <span className="text-4xl">🍷</span>
           </div>
           
-          <h2 className="text-emerald-400 font-bold tracking-widest uppercase text-xs mb-2">Próxima Festividad</h2>
+          <h2 className="text-emerald-400 font-bold tracking-widest uppercase text-xs mb-2">{t.nextHoliday}</h2>
           <h3 className="text-4xl font-black text-white mb-2 drop-shadow-md">Pesaj</h3>
           
           <div className="bg-slate-950/50 py-2 px-6 rounded-full border border-slate-700/50 mb-8 inline-block">
-            <span className="text-slate-300 font-medium">Faltan <span className="text-emerald-400 font-bold text-lg">{daysLeft}</span> días</span>
+            <span className="text-slate-300 font-medium">{t.daysLeft} <span className="text-emerald-400 font-bold text-lg">{daysLeft}</span> {t.days}</span>
           </div>
           
           <div className="w-full bg-slate-800/50 rounded-2xl p-5 border border-slate-700/50 text-left">
             <h4 className="text-white font-bold mb-3 text-sm flex items-center gap-2">
               <span className="bg-slate-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">📋</span>
-              Preparación ({userOrigin === 'ashkenazi' ? 'Ashkenazí' : 'Sefaradí'})
+              {t.preparation} ({userOrigin === 'ashkenazi' ? 'Ashkenazí' : 'Sefaradí'})
             </h4>
             <ul className="text-sm text-slate-400 space-y-2">
               <li className="flex gap-2">
                 <span className="text-emerald-500 mt-0.5">•</span>
-                <span>Limpieza a fondo y venta de Jametz antes del 12 de Abril.</span>
+                <span>{t.pesachPrep1}</span>
               </li>
               <li className="flex gap-2">
                 <span className="text-emerald-500 mt-0.5">•</span>
-                <span>{userOrigin === 'ashkenazi' ? 'Kitniyot (arroz, legumbres) no están permitidos.' : 'Kitniyot (arroz, frijoles) estricto según la costumbre sefaradí que se siga.'}</span>
+                <span>{userOrigin === 'ashkenazi' ? t.pesachPrep2Ashk : t.pesachPrep2Sef}</span>
               </li>
               <li className="flex gap-2">
                 <span className="text-emerald-500 mt-0.5">•</span>
-                <span>Usa la cámara de KosherScan para certificar sellos de &quot;Kosher L&apos;Pesach&quot;.</span>
+                <span>{t.pesachPrep3}</span>
               </li>
             </ul>
           </div>
           
           <Link href="/chaguim" className="mt-6 w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl transition-all shadow-[0_8px_20px_rgba(16,185,129,0.2)] text-center block">
-            Ver Guía Completa Pesaj
+            {t.viewFullGuide}
           </Link>
         </div>
       </div>
@@ -818,12 +973,12 @@ function ChaguimWidget({ userOrigin }: { userOrigin: string }) {
   );
 }
 
-function ScanHistoryWidget({ history, onRestore }: { history: ScanItem[], onRestore: (data: any) => void }) {
+function ScanHistoryWidget({ history, onRestore, t }: { history: ScanItem[], onRestore: (data: any) => void, t: any }) {
   return (
     <div className="w-full bg-slate-800/80 border border-slate-700/50 rounded-[2.5rem] p-8 shadow-xl relative overflow-hidden flex flex-col h-full animate-in fade-in slide-in-from-bottom-8 duration-500">
       <h3 className="text-white font-bold text-xl mb-6 flex items-center gap-2">
         <History className="w-6 h-6 text-emerald-400" />
-        Historial Reciente
+        {t.recentHistory}
       </h3>
       <div className="flex flex-col gap-4 overflow-y-auto pr-2 max-h-[400px]">
         {history.map((item) => {
@@ -853,7 +1008,7 @@ function ScanHistoryWidget({ history, onRestore }: { history: ScanItem[], onRest
   );
 }
 
-function RecipeCard({ recipe }: { recipe: any }) {
+function RecipeCard({ recipe, t }: { recipe: any, t: any }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
@@ -866,7 +1021,7 @@ function RecipeCard({ recipe }: { recipe: any }) {
           {recipe.nombre}
         </h3>
         <span className="text-emerald-500/50 text-xs font-bold uppercase tracking-widest bg-emerald-500/10 px-3 py-1.5 rounded-full group-hover:bg-emerald-500/20 transition-colors">
-          {isExpanded ? 'Ocultar' : 'Ver Receta'}
+          {isExpanded ? t.hide : t.viewRecipe}
         </span>
       </div>
       <p className="text-emerald-100/90 text-sm leading-relaxed mb-4">
@@ -882,7 +1037,7 @@ function RecipeCard({ recipe }: { recipe: any }) {
            
            <h4 className="text-white font-bold tracking-tight mb-3 flex items-center gap-2">
              <span className="bg-emerald-500/20 w-6 h-6 rounded-full flex items-center justify-center text-emerald-400 text-xs shadow-inner border border-emerald-500/30">1</span>
-             Ingredientes Requeridos:
+             {t.requiredIngredients}
            </h4>
            <ul className="pl-5 text-emerald-50 text-sm mb-6 space-y-2 font-medium">
              {Array.isArray(recipe.ingredientes_receta) 
@@ -891,13 +1046,13 @@ function RecipeCard({ recipe }: { recipe: any }) {
                      <span className="text-emerald-500 text-lg leading-none mt-0.5">•</span> {ing}
                    </li>
                  ))
-                : <li>{recipe.ingredientes_receta || 'No detallados.'}</li>
+                : <li>{recipe.ingredientes_receta || t.noDetailed}</li>
              }
            </ul>
 
            <h4 className="text-white font-bold tracking-tight mb-3 flex items-center gap-2">
              <span className="bg-emerald-500/20 w-6 h-6 rounded-full flex items-center justify-center text-emerald-400 text-xs shadow-inner border border-emerald-500/30">2</span>
-             Pasos de Preparación:
+             {t.prepSteps}
            </h4>
            <ol className="pl-2 text-emerald-50 text-sm space-y-3">
              {Array.isArray(recipe.pasos_receta) 
@@ -907,7 +1062,7 @@ function RecipeCard({ recipe }: { recipe: any }) {
                      <span className="leading-relaxed">{paso}</span>
                    </li>
                  ))
-                : <li className="bg-slate-900/40 p-3 rounded-xl border border-slate-700/30">{recipe.pasos_receta || 'Sigue las instrucciones generales de cocina.'}</li>
+                : <li className="bg-slate-900/40 p-3 rounded-xl border border-slate-700/30">{recipe.pasos_receta || t.generalInstructions}</li>
              }
            </ol>
         </div>

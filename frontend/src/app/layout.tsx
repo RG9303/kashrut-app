@@ -1,5 +1,6 @@
 import { Outfit, Inter } from "next/font/google";
 import "./globals.css";
+import GlobalLanguageToggle from "@/components/GlobalLanguageToggle";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -35,6 +36,7 @@ export default function RootLayout({
           fontFamily: 'var(--font-outfit), sans-serif',
         }}
       >
+        <GlobalLanguageToggle />
         {children}
       </body>
     </html>
