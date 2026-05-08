@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useLanguage } from '@/hooks/useLanguage';
 import Link from 'next/link';
 import { ArrowLeft, Globe, MapPin, Search, XCircle, Info, BookOpen, ShieldCheck } from 'lucide-react';
 
@@ -19,7 +20,62 @@ interface LogoInfo {
   };
 }
 
+
 export default function LogosPage() {
+  const { lang } = useLanguage();
+  const isEng = lang === 'eng';
+  
+  const TEXTS = {
+    esp: {
+      global: "Globales",
+      israel: "Israelíes",
+      local: "Locales",
+      title: "Catálogo Enciclopédico",
+      subtitle: "{t.subtitle}",
+      searchPlaceholder: "Busca cualquier certificado...",
+      searchHint: "{t.searchHint}",
+      results: "Resultados Enciclopédicos",
+      studyDetails: "Estudiar Detalle",
+      notFound: "No encontrado en Enciclopedia",
+      notFoundDesc: "No tenemos este sello pre-programado. Utiliza la cámara principal en la pantalla de \"Inicio\" para que la Inteligencia Artificial analice visualmente el sello desconocido que tienes en tus manos.",
+      backToScanner: "Volver al Escáner IA",
+      globalSeals: "Sellos Globales",
+      israelAgencies: "Agencias en Israel",
+      localLatam: "Locales (Latinoamérica)",
+      clickForEncyclopedia: "{t.clickForEncyclopedia}",
+      historyOfAgency: "{t.historyOfAgency}",
+      halachicLevel: "{t.halachicLevel}",
+      rabbinicAuth: "{t.rabbinicAuth}",
+      mainRegion: "{t.mainRegion}",
+      closeEncyclopedia: "{t.closeEncyclopedia}"
+    },
+    eng: {
+      global: "Global",
+      israel: "Israeli",
+      local: "Local",
+      title: "Encyclopedic Catalog",
+      subtitle: "Global Kashrut Dictionary",
+      searchPlaceholder: "Search any certificate...",
+      searchHint: "Type any letter (e.g. OU, cRc) to instantly open the hidden encyclopedia of the seal.",
+      results: "Encyclopedic Results",
+      studyDetails: "Study Detail",
+      notFound: "Not Found in Encyclopedia",
+      notFoundDesc: "We do not have this seal pre-programmed. Use the main camera on the \"Home\" screen for Artificial Intelligence to visually analyze the unknown seal you have in your hands.",
+      backToScanner: "Back to AI Scanner",
+      globalSeals: "Global Seals",
+      israelAgencies: "Agencies in Israel",
+      localLatam: "Local (Latin America)",
+      clickForEncyclopedia: "Click for Encyclopedia",
+      historyOfAgency: "Agency History",
+      halachicLevel: "Halachic Level (Strictness)",
+      rabbinicAuth: "Rabbinic Authority",
+      mainRegion: "Main Region",
+      closeEncyclopedia: "Close Encyclopedia"
+    }
+  };
+  
+  const t = TEXTS[isEng ? 'eng' : 'esp'];
+
 
   const logos: LogoInfo[] = [
     {
@@ -233,32 +289,32 @@ export default function LogosPage() {
                  <div className="space-y-6">
                    <div className="bg-slate-800/50 p-5 rounded-2xl border border-slate-700/50">
                      <h4 className="flex items-center gap-2 text-emerald-400 font-bold text-sm mb-2 uppercase tracking-wide">
-                        <BookOpen className="w-4 h-4" /> Historia de la Agencia
+                        <BookOpen className="w-4 h-4" /> {t.historyOfAgency}
                      </h4>
                      <p className="text-slate-300 text-sm leading-relaxed">{selectedLogo.fullDetails.history}</p>
                    </div>
 
                    <div className="bg-slate-800/50 p-5 rounded-2xl border border-slate-700/50">
                      <h4 className="flex items-center gap-2 text-blue-400 font-bold text-sm mb-2 uppercase tracking-wide">
-                        <ShieldCheck className="w-4 h-4" /> Nivel Halájico (Strictness)
+                        <ShieldCheck className="w-4 h-4" /> {t.halachicLevel}
                      </h4>
                      <p className="text-slate-300 text-sm leading-relaxed">{selectedLogo.fullDetails.strictness}</p>
                    </div>
 
                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                      <div className="bg-slate-800/30 p-4 rounded-xl border border-slate-700/30">
-                       <span className="block text-slate-500 text-xs font-bold uppercase mb-1">Autoridad Rabínica</span>
+                       <span className="block text-slate-500 text-xs font-bold uppercase mb-1">{t.rabbinicAuth}</span>
                        <span className="text-slate-200 text-sm">{selectedLogo.fullDetails.rabbi}</span>
                      </div>
                      <div className="bg-slate-800/30 p-4 rounded-xl border border-slate-700/30">
-                       <span className="block text-slate-500 text-xs font-bold uppercase mb-1">Región Principal</span>
+                       <span className="block text-slate-500 text-xs font-bold uppercase mb-1">{t.mainRegion}</span>
                        <span className="text-slate-200 text-sm">{selectedLogo.fullDetails.regions}</span>
                      </div>
                    </div>
                  </div>
                  
                  <button onClick={() => setSelectedLogo(null)} className="w-full mt-8 py-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-bold rounded-2xl transition-all">
-                   Cerrar Enciclopedia
+                   {t.closeEncyclopedia}
                  </button>
               </div>
            </div>
@@ -276,9 +332,9 @@ export default function LogosPage() {
               <ArrowLeft className="text-slate-400 w-6 h-6" />
             </Link>
             <div>
-              <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">Catálogo Enciclopédico</h1>
+              <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">{t.title}</h1>
               <p className="text-slate-400 font-medium text-sm flex items-center gap-1">
-                Diccionario Kashrut Global
+                {t.subtitle}
               </p>
             </div>
           </div>
@@ -293,12 +349,12 @@ export default function LogosPage() {
              <div className="flex-grow">
                <input 
                  type="text"
-                 placeholder="Busca cualquier certificado..."
+                 placeholder={t.searchPlaceholder}
                  value={searchTerm}
                  onChange={(e) => setSearchTerm(e.target.value)}
                  className="w-full bg-transparent border-none text-white text-xl md:text-2xl font-bold placeholder-slate-500 focus:outline-none focus:ring-0 p-0"
                />
-               <p className="text-slate-400 text-xs md:text-sm mt-1">Escribe cualquier letra (ej. OU, cRc) para abrir instantáneamente la enciclopedia oculta del sello.</p>
+               <p className="text-slate-400 text-xs md:text-sm mt-1">{t.searchHint}</p>
              </div>
            </div>
         </div>
@@ -306,7 +362,7 @@ export default function LogosPage() {
         {searchTerm ? (
           <div className="mb-10 animate-in fade-in duration-300">
             <h2 className="text-2xl font-bold text-emerald-400 mb-6 flex items-center gap-3">
-               Resultados Enciclopédicos ({filteredLogos.length})
+               {t.results} ({filteredLogos.length})
             </h2>
             {filteredLogos.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -316,7 +372,7 @@ export default function LogosPage() {
                        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
                        <div className="relative z-10 drop-shadow-xl">{logo.symbol}</div>
                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                         <span className="opacity-0 group-hover:opacity-100 bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-full text-xs transition-opacity transform translate-y-4 group-hover:translate-y-0">Estudiar Detalle</span>
+                         <span className="opacity-0 group-hover:opacity-100 bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-full text-xs transition-opacity transform translate-y-4 group-hover:translate-y-0">{t.studyDetails}</span>
                        </div>
                     </div>
                     <div className="p-6">
@@ -332,9 +388,9 @@ export default function LogosPage() {
             ) : (
               <div className="text-center py-16 bg-slate-800/20 rounded-3xl border border-slate-700/50">
                 <Info className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-                <h3 className="text-xl text-slate-300 font-bold">No encontrado en Enciclopedia</h3>
-                <p className="text-slate-500 mt-2 max-w-md mx-auto">No tenemos este sello pre-programado. Utiliza la cámara principal en la pantalla de "Inicio" para que la Inteligencia Artificial analice visualmente el sello desconocido que tienes en tus manos.</p>
-                <Link href="/" className="mt-6 inline-block bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white px-6 py-2.5 rounded-xl font-bold transition-colors">Volver al Escáner IA</Link>
+                <h3 className="text-xl text-slate-300 font-bold">{t.notFound}</h3>
+                <p className="text-slate-500 mt-2 max-w-md mx-auto">{t.notFoundDesc}</p>
+                <Link href="/" className="mt-6 inline-block bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white px-6 py-2.5 rounded-xl font-bold transition-colors">{t.backToScanner}</Link>
               </div>
             )}
           </div>
@@ -343,7 +399,7 @@ export default function LogosPage() {
             {/* Globales */}
         <div className="mb-10">
           <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-             <Globe className="text-blue-400 w-6 h-6" /> Sellos Globales
+             <Globe className="text-blue-400 w-6 h-6" /> {t.globalSeals}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {logos.filter(l => l.category === 'Globales').map(logo => (
@@ -355,7 +411,7 @@ export default function LogosPage() {
                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
                    <div className="relative z-10 drop-shadow-xl">{logo.symbol}</div>
                    <div className="absolute bottom-2 left-3 text-white/40 text-[10px] font-bold uppercase tracking-widest group-hover:opacity-0 transition-opacity">
-                     Clic para Enciclopedia
+                     {t.clickForEncyclopedia}
                    </div>
                 </div>
                 <div className="p-6">
@@ -370,7 +426,7 @@ export default function LogosPage() {
         {/* Israelies */}
         <div className="mb-10">
           <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-             <MapPin className="text-amber-400 w-6 h-6" /> Agencias en Israel
+             <MapPin className="text-amber-400 w-6 h-6" /> {t.israelAgencies}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {logos.filter(l => l.category === 'Israelies').map(logo => (
@@ -394,7 +450,7 @@ export default function LogosPage() {
         {/* Locales (Mexico) */}
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-             <MapPin className="text-emerald-400 w-6 h-6" /> Locales (Latinoamérica)
+             <MapPin className="text-emerald-400 w-6 h-6" /> {t.localLatam}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {logos.filter(l => l.category === 'Locales').map(logo => (

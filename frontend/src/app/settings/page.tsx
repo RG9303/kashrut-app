@@ -1,10 +1,73 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useLanguage } from '@/hooks/useLanguage';
 import Link from 'next/link';
 import { User, Globe, Bell, CalendarHeart, ChefHat, Save, ArrowLeft, CheckCircle2 } from 'lucide-react';
 
+
 export default function SettingsPage() {
+  const { lang } = useLanguage();
+  const TEXTS = {
+    esp: {
+      back: "Volver",
+      prefs: "Preferencias",
+      account: "Cuenta de Usuario",
+      name: "Nombre",
+      namePlace: "Tu nombre completo",
+      email: "Correo Electrónico",
+      emailPlace: "correo@ejemplo.com",
+      origin: "Kashrut y Origen",
+      custom: "Costumbre",
+      ashk: "Ashkenazí",
+      sef: "Sefaradí",
+      country: "País de Residencia",
+      mexico: "México",
+      usa: "Estados Unidos",
+      arg: "Argentina",
+      isr: "Israel",
+      spa: "España",
+      other: "Otro País",
+      interests: "Intereses y Módulos",
+      interestsDesc: "{t.interestsDesc}",
+      guide: "Guía de Chaguim",
+      guideDesc: "Alertas y preparación para Festividades",
+      recipes: "Recetas Kosher",
+      recipesDesc: "Sugerencias basadas en tus costumbres",
+      saved: "{t.saved}",
+      save: "{t.save}"
+    },
+    eng: {
+      back: "Back",
+      prefs: "Preferences",
+      account: "User Account",
+      name: "Name",
+      namePlace: "Your full name",
+      email: "Email Address",
+      emailPlace: "email@example.com",
+      origin: "Kashrut and Origin",
+      custom: "Custom",
+      ashk: "Ashkenazi",
+      sef: "Sephardic",
+      country: "Country of Residence",
+      mexico: "Mexico",
+      usa: "United States",
+      arg: "Argentina",
+      isr: "Israel",
+      spa: "Spain",
+      other: "Other Country",
+      interests: "Interests and Modules",
+      interestsDesc: "Activate these options to customize your experience and prepare for future updates.",
+      guide: "Chaguim Guide",
+      guideDesc: "Alerts and preparation for Holidays",
+      recipes: "Kosher Recipes",
+      recipesDesc: "Suggestions based on your customs",
+      saved: "Preferences Saved!",
+      save: "Save Configuration"
+    }
+  };
+  const t = TEXTS[lang as keyof typeof TEXTS] || TEXTS['esp'];
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   
@@ -57,7 +120,7 @@ export default function SettingsPage() {
     <main className="flex min-h-screen flex-col items-center p-4 lg:p-10 max-w-[800px] mx-auto relative">
       <header className="w-full flex justify-between items-center mb-8">
         <Link href="/" className="text-slate-400 hover:text-white transition flex items-center gap-2 font-medium">
-          <ArrowLeft className="w-5 h-5" /> Volver
+          <ArrowLeft className="w-5 h-5" /> {t.back}
         </Link>
         <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
           Preferencias
@@ -71,26 +134,26 @@ export default function SettingsPage() {
         <section>
           <div className="flex items-center gap-3 mb-4 text-emerald-400">
             <User className="w-6 h-6" />
-            <h2 className="text-xl font-bold text-white tracking-tight">Cuenta de Usuario</h2>
+            <h2 className="text-xl font-bold text-white tracking-tight">{t.account}</h2>
           </div>
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-semibold text-slate-400">Nombre</label>
+              <label className="text-sm font-semibold text-slate-400">{t.name}</label>
               <input 
                 type="text" 
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Tu nombre completo"
+                placeholder={t.namePlace}
                 className="w-full bg-slate-900/80 border border-slate-700 text-white rounded-xl py-3 px-4 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-semibold text-slate-400">Correo Electrónico</label>
+              <label className="text-sm font-semibold text-slate-400">{t.email}</label>
               <input 
                 type="email" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="correo@ejemplo.com"
+                placeholder={t.emailPlace}
                 className="w-full bg-slate-900/80 border border-slate-700 text-white rounded-xl py-3 px-4 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
               />
             </div>
@@ -103,33 +166,33 @@ export default function SettingsPage() {
         <section>
           <div className="flex items-center gap-3 mb-4 text-emerald-400">
             <Globe className="w-6 h-6" />
-            <h2 className="text-xl font-bold text-white tracking-tight">Kashrut y Origen</h2>
+            <h2 className="text-xl font-bold text-white tracking-tight">{t.origin}</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-semibold text-slate-400">Costumbre</label>
+              <label className="text-sm font-semibold text-slate-400">{t.custom}</label>
               <select
                 value={userOrigin}
                 onChange={(e) => setUserOrigin(e.target.value)}
                 className="w-full bg-slate-900/80 border border-slate-700 text-white rounded-xl py-3 px-4 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors appearance-none cursor-pointer"
               >
-                <option value="ashkenazi" className="bg-slate-800">Ashkenazí</option>
-                <option value="sefaradi" className="bg-slate-800">Sefaradí</option>
+                <option value="ashkenazi" className="bg-slate-800">{t.ashk}</option>
+                <option value="sefaradi" className="bg-slate-800">{t.sef}</option>
               </select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-semibold text-slate-400">País de Residencia</label>
+              <label className="text-sm font-semibold text-slate-400">{t.country}</label>
               <select
                 value={userCountry}
                 onChange={(e) => setUserCountry(e.target.value)}
                 className="w-full bg-slate-900/80 border border-slate-700 text-white rounded-xl py-3 px-4 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors appearance-none cursor-pointer"
               >
-                <option value="México" className="bg-slate-800">México</option>
-                <option value="Estados Unidos" className="bg-slate-800">Estados Unidos</option>
-                <option value="Argentina" className="bg-slate-800">Argentina</option>
-                <option value="Israel" className="bg-slate-800">Israel</option>
-                <option value="España" className="bg-slate-800">España</option>
-                <option value="Otro" className="bg-slate-800">Otro País</option>
+                <option value="México" className="bg-slate-800">{t.mexico}</option>
+                <option value="Estados Unidos" className="bg-slate-800">{t.usa}</option>
+                <option value="Argentina" className="bg-slate-800">{t.arg}</option>
+                <option value="Israel" className="bg-slate-800">{t.isr}</option>
+                <option value="España" className="bg-slate-800">{t.spa}</option>
+                <option value="Otro" className="bg-slate-800">{t.other}</option>
               </select>
             </div>
           </div>
@@ -141,10 +204,10 @@ export default function SettingsPage() {
         <section>
           <div className="flex items-center gap-3 mb-4 text-emerald-400">
             <Bell className="w-6 h-6" />
-            <h2 className="text-xl font-bold text-white tracking-tight">Intereses y Módulos</h2>
+            <h2 className="text-xl font-bold text-white tracking-tight">{t.interests}</h2>
           </div>
           <p className="text-sm text-slate-400 mb-5">
-            Activa estas opciones para personalizar tu experiencia y prepararnos para futuras actualizaciones.
+            {t.interestsDesc}
           </p>
           
           <div className="flex flex-col gap-3">
@@ -156,8 +219,8 @@ export default function SettingsPage() {
                   <CalendarHeart className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="text-white font-medium">Guía de Chaguim</div>
-                  <div className="text-xs text-slate-400 mt-0.5">Alertas y preparación para Festividades</div>
+                  <div className="text-white font-medium">{t.guide}</div>
+                  <div className="text-xs text-slate-400 mt-0.5">{t.guideDesc}</div>
                 </div>
               </div>
               <div className={`w-12 h-6 rounded-full p-1 relative transition-colors duration-300 ${chaguimAlerts ? 'bg-emerald-500' : 'bg-slate-600'}`}>
@@ -173,8 +236,8 @@ export default function SettingsPage() {
                   <ChefHat className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="text-white font-medium">Recetas Kosher</div>
-                  <div className="text-xs text-slate-400 mt-0.5">Sugerencias basadas en tus costumbres</div>
+                  <div className="text-white font-medium">{t.recipes}</div>
+                  <div className="text-xs text-slate-400 mt-0.5">{t.recipesDesc}</div>
                 </div>
               </div>
               <div className={`w-12 h-6 rounded-full p-1 relative transition-colors duration-300 ${kosherRecipes ? 'bg-emerald-500' : 'bg-slate-600'}`}>
@@ -197,12 +260,12 @@ export default function SettingsPage() {
             {saved ? (
               <>
                 <CheckCircle2 className="w-6 h-6" />
-                ¡Preferencias Guardadas!
+                {t.saved}
               </>
             ) : (
               <>
                 <Save className="w-6 h-6" />
-                Guardar Configuración
+                {t.save}
               </>
             )}
           </button>

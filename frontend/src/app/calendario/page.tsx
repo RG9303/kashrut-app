@@ -3,8 +3,59 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Gift, Wine, CloudRain, Apple, Flame, Tent, CalendarDays } from 'lucide-react';
+import { useLanguage } from '@/hooks/useLanguage';
+
+const TEXTS = {
+  esp: {
+    title: "Calendario Hebreo",
+    subtitle: "Ciclo Anual 2026 • 5786/5787",
+    heroTitle: "Cronograma Kashrut",
+    heroDesc: "Cada festividad judía trae consigo leyes culinarias únicas y atmósferas especiales. Desplázate por el calendario para planificar estratégicamente tus próximos Chaguim y evitar contratiempos dietéticos.",
+    advisor: "Kashrut Advisor",
+    purimDesc: "Fiesta de la alegría, disfraces y la lectura de la Meguilá.",
+    purimTip: 'Asegúrate de que todos los dulces, vinos y alimentos incluidos en tus "Mishloaj Manot" (regalos de comida) tengan certificación Kosher y sellos verificables para que quien lo reciba pueda disfrutarlos con absoluta confianza.',
+    pesajDesc: 'La liberación de Egipto. Prohibición absoluta de consumir o poseer Jametz (leudados).',
+    pesajTip: 'Se requiere una limpieza milimétrica del hogar. Todo alimento empacado durante estos 8 días requiere explícitamente el sello "Kosher L\'Pesach". Ashknenazím evitan comer Kitniyot (arroz, maíz, legumbres).',
+    pesajLink: 'Ver Mega-Guía de Pesaj',
+    shavuotDesc: 'Celebra la entrega sublime de la Torá en el Monte Sinaí.',
+    shavuotTip: 'Es tradición consumir majestuosos banquetes lácteos (Cheesecakes, pastas). Presta especial atención al sello de "Jalav Israel" (leche supervisada) y no olvides esperar el tiempo reglamentario tras comer carne antes de consumir los lácteos festivos.',
+    roshDesc: 'El Año Nuevo Judío. Días del juicio y la coronación divina.',
+    roshTip: 'Comemos Simanim (señales místicas de buen augurio) como manzana con miel, granada y cabeza de pescado. Asegura que la miel sea 100% pura abeja y revisa intensamente la granada, poro y espinacas en búsqueda de insectos.',
+    kipurDesc: 'El sagrado Día del Perdón. Dedicado completamente al rezo espiritual.',
+    kipurTip: 'Ayuno profundo y absoluto de 25 horas. No hay preparación de alimentos para este Chag, pero tu cena previa de "Seuda Mafseket" debe ser ligera, cocinada con rigor Kosher y sin alimentos demasiado salados.',
+    sukotDesc: 'La festividad de las Cabañas, recordando los 40 años en el desierto.',
+    sukotTip: 'Cualquier comida establecida (pan, jalá, mezonot fuertes) debe ser consumida exclusivamente dentro de la estructura rabínicamente legal de la Sucá. Reúne las 4 Especies (Lulav y Etrog) con sellos de supervisión agraria validada.',
+    janucaDesc: 'El milagro de las luces y el rescate del Sagrado Templo.',
+    janucaTip: 'Costumbre de consumir alimentos fritos brillantes en aceite, como Latkes y Sufganiyot (donas). Compra aceite Kosher de alta calidad y revisa muy bien los lácteos de los postres fritos cruzando las listas internacionales Kashrut.'
+  },
+  eng: {
+    title: "Hebrew Calendar",
+    subtitle: "Annual Cycle 2026 • 5786/5787",
+    heroTitle: "Kashrut Timeline",
+    heroDesc: "Each Jewish holiday brings unique culinary laws and special atmospheres. Scroll through the calendar to strategically plan your upcoming Chaguim and avoid dietary setbacks.",
+    advisor: "Kashrut Advisor",
+    purimDesc: "Festival of joy, costumes, and the reading of the Megillah.",
+    purimTip: 'Ensure that all sweets, wines, and foods included in your "Mishloach Manot" (food gifts) have Kosher certification and verifiable seals so the recipient can enjoy them with absolute confidence.',
+    pesajDesc: 'The liberation from Egypt. Absolute prohibition of consuming or possessing Chametz (leavened bread).',
+    pesajTip: 'Meticulous home cleaning is required. All packaged food during these 8 days explicitly requires the "Kosher L\'Pesach" seal. Ashkenazim avoid eating Kitniyot (rice, corn, legumes).',
+    pesajLink: 'View Pesach Mega-Guide',
+    shavuotDesc: 'Celebrates the sublime giving of the Torah at Mount Sinai.',
+    shavuotTip: 'It is a tradition to consume majestic dairy banquets (Cheesecakes, pastas). Pay special attention to the "Cholov Yisroel" (supervised milk) seal and do not forget to wait the required time after eating meat before consuming festive dairy.',
+    roshDesc: 'The Jewish New Year. Days of judgment and divine coronation.',
+    roshTip: 'We eat Simanim (mystical signs of good omen) such as apple with honey, pomegranate, and fish head. Ensure the honey is 100% pure bee and intensely check the pomegranate, leek, and spinach for insects.',
+    kipurDesc: 'The holy Day of Atonement. Completely dedicated to spiritual prayer.',
+    kipurTip: 'Deep and absolute fast of 25 hours. There is no food preparation for this Chag, but your previous "Seudah Mafseket" dinner should be light, cooked with Kosher rigor and without excessively salty foods.',
+    sukotDesc: 'The Festival of Booths, remembering the 40 years in the desert.',
+    sukotTip: 'Any established meal (bread, challah, strong mezonot) must be consumed exclusively within the rabbinically legal structure of the Sukkah. Gather the 4 Species (Lulav and Etrog) with validated agricultural supervision seals.',
+    janucaDesc: 'The miracle of lights and the rescue of the Holy Temple.',
+    janucaTip: 'Custom of consuming bright foods fried in oil, such as Latkes and Sufganiyot (donuts). Buy high-quality Kosher oil and check the dairy of fried desserts very well by cross-referencing international Kashrut lists.'
+  }
+};
 
 export default function CalendarioPage() {
+  const { lang } = useLanguage();
+  const t = TEXTS[lang as keyof typeof TEXTS] || TEXTS['esp'];
+
 
   const timeline = [
     {
@@ -14,8 +65,8 @@ export default function CalendarioPage() {
       civilDate: 'Marzo 3, 2026',
       icon: <Gift className="w-6 h-6 text-fuchsia-400" />,
       color: 'bg-fuchsia-500',
-      description: 'Fiesta de la alegría, disfraces y la lectura de la Meguilá.',
-      kashrutTip: 'Asegúrate de que todos los dulces, vinos y alimentos incluidos en tus "Mishloaj Manot" (regalos de comida) tengan certificación Kosher y sellos verificables para que quien lo reciba pueda disfrutarlos con absoluta confianza.',
+      description: t.purimDesc,
+      kashrutTip: t.purimTip,
       linkText: null,
       linkHref: null
     },
@@ -26,9 +77,9 @@ export default function CalendarioPage() {
       civilDate: 'Abril 1 - Abril 9, 2026',
       icon: <Wine className="w-6 h-6 text-emerald-400" />,
       color: 'bg-emerald-500',
-      description: 'La liberación de Egipto. Prohibición absoluta de consumir o poseer Jametz (leudados).',
-      kashrutTip: 'Se requiere una limpieza milimétrica del hogar. Todo alimento empacado durante estos 8 días requiere explícitamente el sello "Kosher L\'Pesach". Ashknenazím evitan comer Kitniyot (arroz, maíz, legumbres).',
-      linkText: 'Ver Mega-Guía de Pesaj',
+      description: t.pesajDesc,
+      kashrutTip: t.pesajTip,
+      linkText: t.pesajLink,
       linkHref: '/chaguim'
     },
     {
@@ -38,8 +89,8 @@ export default function CalendarioPage() {
       civilDate: 'Mayo 22, 2026',
       icon: <CloudRain className="w-6 h-6 text-sky-400" />,
       color: 'bg-sky-500',
-      description: 'Celebra la entrega sublime de la Torá en el Monte Sinaí.',
-      kashrutTip: 'Es tradición consumir majestuosos banquetes lácteos (Cheesecakes, pastas). Presta especial atención al sello de "Jalav Israel" (leche supervisada) y no olvides esperar el tiempo reglamentario tras comer carne antes de consumir los lácteos festivos.',
+      description: t.shavuotDesc,
+      kashrutTip: t.shavuotTip,
       linkText: null,
       linkHref: null
     },
@@ -50,8 +101,8 @@ export default function CalendarioPage() {
       civilDate: 'Septiembre 11 - 13, 2026',
       icon: <Apple className="w-6 h-6 text-rose-400" />,
       color: 'bg-rose-500',
-      description: 'El Año Nuevo Judío. Días del juicio y la coronación divina.',
-      kashrutTip: 'Comemos Simanim (señales místicas de buen augurio) como manzana con miel, granada y cabeza de pescado. Asegura que la miel sea 100% pura abeja y revisa intensamente la granada, poro y espinacas en búsqueda de insectos.',
+      description: t.roshDesc,
+      kashrutTip: t.roshTip,
       linkText: null,
       linkHref: null
     },
@@ -62,8 +113,8 @@ export default function CalendarioPage() {
       civilDate: 'Septiembre 20, 2026',
       icon: <Flame className="w-6 h-6 text-amber-400" />,
       color: 'bg-amber-500',
-      description: 'El sagrado Día del Perdón. Dedicado completamente al rezo espiritual.',
-      kashrutTip: 'Ayuno profundo y absoluto de 25 horas. No hay preparación de alimentos para este Chag, pero tu cena previa de "Seuda Mafseket" debe ser ligera, cocinada con rigor Kosher y sin alimentos demasiado salados.',
+      description: t.kipurDesc,
+      kashrutTip: t.kipurTip,
       linkText: null,
       linkHref: null
     },
@@ -74,8 +125,8 @@ export default function CalendarioPage() {
       civilDate: 'Septiembre 25 - Oct 2, 2026',
       icon: <Tent className="w-6 h-6 text-emerald-400" />,
       color: 'bg-emerald-600',
-      description: 'La festividad de las Cabañas, recordando los 40 años en el desierto.',
-      kashrutTip: 'Cualquier comida establecida (pan, jalá, mezonot fuertes) debe ser consumida exclusivamente dentro de la estructura rabínicamente legal de la Sucá. Reúne las 4 Especies (Lulav y Etrog) con sellos de supervisión agraria validada.',
+      description: t.sukotDesc,
+      kashrutTip: t.sukotTip,
       linkText: null,
       linkHref: null
     },
@@ -86,8 +137,8 @@ export default function CalendarioPage() {
       civilDate: 'Diciembre 4 - 12, 2026',
       icon: <Flame className="w-6 h-6 text-orange-400" />,
       color: 'bg-orange-500',
-      description: 'El milagro de las luces y el rescate del Sagrado Templo.',
-      kashrutTip: 'Costumbre de consumir alimentos fritos brillantes en aceite, como Latkes y Sufganiyot (donas). Compra aceite Kosher de alta calidad y revisa muy bien los lácteos de los postres fritos cruzando las listas internacionales Kashrut.',
+      description: t.janucaDesc,
+      kashrutTip: t.janucaTip,
       linkText: null,
       linkHref: null
     }
@@ -104,8 +155,8 @@ export default function CalendarioPage() {
               <ArrowLeft className="text-slate-400 w-6 h-6" />
             </Link>
             <div>
-              <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">Calendario Hebreo</h1>
-              <p className="text-slate-400 font-medium text-sm">Ciclo Anual 2026 • 5786/5787</p>
+              <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">{t.title}</h1>
+              <p className="text-slate-400 font-medium text-sm">{t.subtitle}</p>
             </div>
           </div>
         </div>
@@ -119,9 +170,9 @@ export default function CalendarioPage() {
              <div className="w-16 h-16 rounded-3xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-6 border border-emerald-500/20 shadow-inner">
                <CalendarDays className="w-8 h-8" />
              </div>
-             <h2 className="text-3xl font-bold text-white mb-2">Cronograma Kashrut</h2>
+             <h2 className="text-3xl font-bold text-white mb-2">{t.heroTitle}</h2>
              <p className="text-slate-400 text-lg max-w-2xl leading-relaxed">
-               Cada festividad judía trae consigo leyes culinarias únicas y atmósferas especiales. Desplázate por el calendario para planificar estratégicamente tus próximos Chaguim y evitar contratiempos dietéticos.
+               {t.heroDesc}
              </p>
            </div>
         </div>
@@ -166,7 +217,7 @@ export default function CalendarioPage() {
 
                       <div className="bg-slate-900/60 p-5 rounded-2xl border border-slate-700/50 relative">
                         <span className="absolute -top-3 left-4 bg-slate-900 px-2 text-[10px] font-black tracking-widest uppercase text-slate-400 border border-slate-700/50 rounded-full">
-                          Kashrut Advisor
+                          {t.advisor}
                         </span>
                         <p className="text-emerald-100/80 text-sm leading-relaxed font-medium">
                           {chag.kashrutTip}

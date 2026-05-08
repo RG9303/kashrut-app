@@ -476,28 +476,28 @@ export default function Home() {
             </div>
             <div className="p-4 flex flex-col gap-2 overflow-y-auto">
               <button onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-3 p-3.5 rounded-xl hover:bg-slate-800/80 text-slate-300 hover:text-white transition-colors w-full text-left font-medium border border-transparent hover:border-slate-700/50">
-                <Camera className="w-5 h-5 text-emerald-500" /> Inicio (Escáner)
+                <Camera className="w-5 h-5 text-emerald-500" /> {t.sidebarTitle}
               </button>
               <Link href="/chaguim" className="flex items-center gap-3 p-3.5 rounded-xl hover:bg-slate-800/80 text-slate-300 hover:text-white transition-colors w-full text-left font-medium border border-transparent hover:border-slate-700/50">
-                <span className="text-xl w-5 flex justify-center">🍷</span> Mega-Guía Chaguim
+                <span className="text-xl w-5 flex justify-center">🍷</span> {t.megaGuide}
               </Link>
               <div className="flex items-center gap-3 p-3.5 rounded-xl opacity-60 cursor-not-allowed text-slate-400 w-full text-left font-medium">
-                <span className="text-xl w-5 flex justify-center">👨‍🍳</span> Recetario Kosher <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded-full ml-auto font-bold uppercase tracking-widest border border-slate-700">{t.soon}</span>
+                <span className="text-xl w-5 flex justify-center">👨‍🍳</span> {t.kosherRecipe} <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded-full ml-auto font-bold uppercase tracking-widest border border-slate-700">{t.soon}</span>
               </div>
               <Link href="/calendario" className="flex items-center gap-3 p-3.5 rounded-xl hover:bg-slate-800/80 text-slate-300 hover:text-white transition-colors w-full text-left font-medium border border-transparent hover:border-slate-700/50">
-                <span className="text-xl w-5 flex justify-center">📅</span> Calendario Hebreo
+                <span className="text-xl w-5 flex justify-center">📅</span> {t.hebrewCalendar}
               </Link>
               <Link href="/logos" className="flex items-center gap-3 p-3.5 rounded-xl hover:bg-slate-800/80 text-slate-300 hover:text-white transition-colors w-full text-left font-medium border border-transparent hover:border-slate-700/50">
-                <span className="text-xl w-5 flex justify-center">🔖</span> Catálogo de Logos
+                <span className="text-xl w-5 flex justify-center">🔖</span> {t.logosCatalog}
               </Link>
               <Link href="/insectos" className="flex items-center gap-3 p-3.5 rounded-xl hover:bg-slate-800/80 text-slate-300 hover:text-white transition-colors w-full text-left font-medium border border-transparent hover:border-slate-700/50">
-                <span className="text-xl w-5 flex justify-center">🐛</span> Escáner de Insectos
+                <span className="text-xl w-5 flex justify-center">🐛</span> {t.insectScanner}
               </Link>
               
               <div className="mt-8 pt-6 border-t border-slate-800">
                <div className="flex flex-col gap-1 p-4 rounded-xl bg-gradient-to-br from-rose-500/10 to-transparent border border-rose-500/20 text-rose-300 w-full text-left opacity-90 backdrop-blur-sm shadow-inner cursor-not-allowed">
                  <div className="flex items-center gap-2 font-bold mb-1">
-                   <ShieldAlert className="w-5 h-5 text-rose-500" /> Alertas de Kashrut
+                   <ShieldAlert className="w-5 h-5 text-rose-500" /> {t.kashrutAlerts}
                  </div>
                  <p className="text-xs text-rose-400/80 leading-relaxed pr-2">{t.kashrutAlertsDesc}</p>
                  <span className="text-[10px] bg-rose-500/20 text-rose-300 px-2.5 py-1 rounded-full w-fit mt-2 font-bold uppercase tracking-wider border border-rose-500/30">{t.soon}</span>
