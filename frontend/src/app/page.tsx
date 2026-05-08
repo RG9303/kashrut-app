@@ -588,7 +588,7 @@ export default function Home() {
                 disabled={isScanning}
                 className="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-semibold py-4 rounded-2xl shadow-[0_8px_25px_rgba(16,185,129,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"
               >
-                <Camera className="w-5 h-5" /> Activar Cámara
+                <Camera className="w-5 h-5" /> {t.activateCamera}
               </button>
             ) : (
               <>
@@ -605,7 +605,7 @@ export default function Home() {
                   disabled={isScanning}
                   className="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-[0_8px_25px_rgba(16,185,129,0.3)] hover:brightness-110 text-white font-bold py-4 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 text-lg"
                 >
-                  <Camera className="w-6 h-6" /> Capturar
+                  <Camera className="w-6 h-6" /> {t.capture}
                 </button>
               </>
             )}
@@ -630,7 +630,7 @@ export default function Home() {
               disabled={isScanning}
               className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2"
             >
-              <Upload className="w-5 h-5 opacity-70" /> Subir desde Galería
+              <Upload className="w-5 h-5 opacity-70" /> {t.uploadGallery}
             </button>
 
             <form onSubmit={handleBarcodeSubmit} className="flex gap-2">
