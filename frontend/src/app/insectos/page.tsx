@@ -19,7 +19,61 @@ interface InsectResult {
   resumen?: string;
 }
 
+const TEXTS = {
+  esp: {
+    title: "Escáner de Insectos",
+    description: "Coloca la hoja, vegetal o producto sobre una superficie clara y presiona escanear. El motor IA buscará insectos camuflados.",
+    noSource: "Sin origen de captura",
+    inspecting: "Inspeccionando...",
+    activateCamera: "Activar Cámara",
+    scan: "Escanear",
+    scanAnother: "Escanear Otra",
+    uploadGallery: "Subir desde Galería",
+    status: "Status",
+    globalConfidence: "Confianza Global",
+    clean: "Limpio",
+    suspects: "Sospechosos",
+    severity: "Severidad",
+    recommendation: "Recomendación",
+    noInsect: "Ningún Insecto Detectado",
+    noInsectDesc: "La IA no encontró signos de infestación. Aún así, sigue los procedimientos Halájicos de lavado regulares.",
+    waitingImage: "Esperando Imagen",
+    waitingImageDesc: "Toma una foto de alta calidad a las hojas con buena iluminación natural para obtener los mejores resultados de la IA.",
+    cameraError: "No se pudo acceder a la cámara.",
+    serverError: "Error de servidor",
+    noStatus: "No se pudo detectar el estatus de insectos.",
+    errorPrefix: "Error: "
+  },
+  eng: {
+    title: "Insect Scanner",
+    description: "Place the leaf, vegetable or product on a clear surface and press scan. The AI engine will look for camouflaged insects.",
+    noSource: "No capture source",
+    inspecting: "Inspecting...",
+    activateCamera: "Activate Camera",
+    scan: "Scan",
+    scanAnother: "Scan Another",
+    uploadGallery: "Upload from Gallery",
+    status: "Status",
+    globalConfidence: "Global Confidence",
+    clean: "Clean",
+    suspects: "Suspects",
+    severity: "Severity",
+    recommendation: "Recommendation",
+    noInsect: "No Insect Detected",
+    noInsectDesc: "The AI found no signs of infestation. Even so, follow the regular Halachic washing procedures.",
+    waitingImage: "Waiting for Image",
+    waitingImageDesc: "Take a high-quality photo of the leaves with good natural lighting to get the best AI results.",
+    cameraError: "Could not access the camera.",
+    serverError: "Server error",
+    noStatus: "Could not detect the insect status.",
+    errorPrefix: "Error: "
+  }
+};
+
 export default function Insectos() {
+  const [lang, setLang] = useState<'esp' | 'eng'>('esp');
+  const t = TEXTS[lang];
+
   const [isScanning, setIsScanning] = useState(false);
   const [result, setResult] = useState<InsectResult | null>(null);
   
@@ -42,7 +96,7 @@ export default function Insectos() {
         }
     } catch (err) {
         console.error("Error accessing camera:", err);
-        alert("No se pudo acceder a la cámara.");
+        alert(t.cameraError);
     }
   };
 
@@ -100,7 +154,7 @@ export default function Insectos() {
 
           if (!res.ok) {
               const err = await res.json();
-              throw new Error(err.detail || 'Error de servidor');
+              throw new Error(err.detail || t.serverError);
           }
 
           const data = await res.json();
@@ -108,13 +162,13 @@ export default function Insectos() {
           if (data.insect_scanner) {
              setResult(data.insect_scanner);
           } else {
-             throw new Error("No se pudo detectar el estatus de insectos.");
+             throw new Error(t.noStatus);
           }
 
           if (isCameraActive) stopCamera();
       } catch (error: any) {
           console.error(error);
-          alert('Error: ' + error.message);
+          alert(t.errorPrefix + error.message);
       } finally {
           setIsScanning(false);
       }
@@ -122,20 +176,38 @@ export default function Insectos() {
 
   return (
     <main className="flex min-h-screen flex-col p-4 lg:p-10 gap-8 max-w-[1400px] mx-auto bg-[#0a1128] text-white">
-      <header className="w-full flex items-center gap-4">
-        <Link href="/" className="text-slate-400 hover:text-white transition bg-slate-800 p-2 rounded-full">
-            <ChevronLeft className="w-6 h-6" />
-        </Link>
-        <h1 className="text-2xl lg:text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 flex items-center gap-2">
-           Escáner de Insectos
-        </h1>
+      <header className="w-full flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Link href="/" className="text-slate-400 hover:text-white transition bg-slate-800 p-2 rounded-full">
+              <ChevronLeft className="w-6 h-6" />
+          </Link>
+          <h1 className="text-2xl lg:text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 flex items-center gap-2">
+             {t.title}
+          </h1>
+        </div>
+        
+        {/* Language Toggle */}
+        <div className="flex bg-slate-800 rounded-lg p-1">
+          <button 
+            onClick={() => setLang('esp')}
+            className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${lang === 'esp' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+          >
+            ESP
+          </button>
+          <button 
+            onClick={() => setLang('eng')}
+            className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${lang === 'eng' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+          >
+            ENG
+          </button>
+        </div>
       </header>
 
       <div className="flex flex-col lg:flex-row gap-8 w-full">
         {/* Left Column: Scanner and Preview */}
         <div className="flex-1 w-full max-w-lg mx-auto lg:max-w-none flex flex-col items-center bg-slate-900 border border-slate-700/50 rounded-[2.5rem] p-6 lg:p-10 shadow-2xl relative">
             <p className="text-slate-400 text-center mb-6 text-sm">
-                Coloca la hoja, vegetal o producto sobre una superficie clara y presiona escanear. El motor IA buscará insectos camuflados.
+                {t.description}
             </p>
 
             <div className="relative w-full aspect-square max-w-[400px] rounded-3xl overflow-hidden bg-slate-950 border-2 border-slate-700/50 my-2 flex justify-center items-center shadow-inner group">
@@ -159,7 +231,7 @@ export default function Insectos() {
                             const h = ((ymax - ymin) / scale) * 100;
                             const w = ((xmax - xmin) / scale) * 100;
 
-                            const isHigh = d.severidad.toLowerCase() === 'alta';
+                            const isHigh = d.severidad.toLowerCase() === 'alta' || d.severidad.toLowerCase() === 'high';
                             const borderColor = isHigh ? 'border-rose-500' : 'border-amber-400';
                             const bgColor = isHigh ? 'bg-rose-500/20' : 'bg-amber-400/20';
 
@@ -185,7 +257,7 @@ export default function Insectos() {
                         {!isCameraActive && (
                             <div className="flex flex-col items-center opacity-40">
                                 <Search className="w-16 h-16 mb-2" />
-                                <span className="font-bold tracking-widest uppercase text-xs">Sin origen de captura</span>
+                                <span className="font-bold tracking-widest uppercase text-xs">{t.noSource}</span>
                             </div>
                         )}
                     </>
@@ -194,7 +266,7 @@ export default function Insectos() {
                 {isScanning && (
                     <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md flex flex-col items-center justify-center z-30">
                         <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                        <span className="font-bold animate-pulse text-emerald-100 drop-shadow-lg text-lg">Inspeccionando...</span>
+                        <span className="font-bold animate-pulse text-emerald-100 drop-shadow-lg text-lg">{t.inspecting}</span>
                     </div>
                 )}
             </div>
@@ -202,15 +274,15 @@ export default function Insectos() {
             <div className="w-full flex gap-3 mt-6">
                 {!isCameraActive && !imagePreview ? (
                     <button onClick={startCamera} className="flex-1 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-white font-bold py-4 rounded-2xl shadow-[0_8px_25px_rgba(16,185,129,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2">
-                        <Camera className="w-5 h-5" /> Activar Cámara
+                        <Camera className="w-5 h-5" /> {t.activateCamera}
                     </button>
                 ) : isCameraActive ? (
                     <button onClick={captureAndScan} disabled={isScanning} className="flex-1 bg-gradient-to-r from-emerald-500 to-cyan-500 shadow-[0_8px_25px_rgba(16,185,129,0.3)] text-white font-bold py-4 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 text-lg">
-                        <ZoomIn className="w-6 h-6" /> Escanear
+                        <ZoomIn className="w-6 h-6" /> {t.scan}
                     </button>
                 ) : (
                     <button onClick={() => setImagePreview(null)} className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3.5 rounded-2xl transition-all border border-slate-700">
-                        Escanear Otra
+                        {t.scanAnother}
                     </button>
                 )}
             </div>
@@ -218,7 +290,7 @@ export default function Insectos() {
             <div className="w-full mt-4 flex flex-col gap-3">
                 <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
                 <button onClick={() => fileInputRef.current?.click()} disabled={isScanning} className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 font-semibold py-3.5 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2">
-                <Upload className="w-5 h-5 opacity-70" /> Subir desde Galería
+                <Upload className="w-5 h-5 opacity-70" /> {t.uploadGallery}
                 </button>
             </div>
         </div>
@@ -232,13 +304,13 @@ export default function Insectos() {
                    <div className={`p-6 rounded-[2rem] border shadow-2xl flex items-center justify-between
                       ${result.detecciones.length === 0 ? 'bg-emerald-900/30 border-emerald-500/50' : 'bg-rose-900/30 border-rose-500/50'}`}>
                        <div className="flex flex-col gap-1">
-                           <span className="uppercase text-[11px] tracking-widest font-bold opacity-60">Status</span>
+                           <span className="uppercase text-[11px] tracking-widest font-bold opacity-60">{t.status}</span>
                            <h3 className="text-3xl font-black">
-                               {result.detecciones.length === 0 ? 'Limpio' : `${result.detecciones.length} Sospechosos`}
+                               {result.detecciones.length === 0 ? t.clean : `${result.detecciones.length} ${t.suspects}`}
                            </h3>
                        </div>
                        <div className="flex flex-col items-end gap-1">
-                          <span className="uppercase text-[11px] tracking-widest font-bold opacity-60">Confianza Global</span>
+                          <span className="uppercase text-[11px] tracking-widest font-bold opacity-60">{t.globalConfidence}</span>
                           <span className="text-2xl font-bold bg-slate-900 px-4 py-1 rounded-xl border border-slate-700 text-cyan-400">
                               {result.confianza_global}
                           </span>
@@ -251,10 +323,10 @@ export default function Insectos() {
                            {result.detecciones.map((det, i) => (
                                <div key={i} className="bg-slate-900 border border-slate-700/60 p-5 rounded-3xl flex gap-4 overflow-hidden relative">
                                    {/* Status Indicator */}
-                                   <div className={`w-1.5 absolute left-0 top-0 bottom-0 ${det.severidad.toLowerCase() === 'alta' ? 'bg-rose-500' : 'bg-amber-400'}`}></div>
+                                   <div className={`w-1.5 absolute left-0 top-0 bottom-0 ${det.severidad.toLowerCase() === 'alta' || det.severidad.toLowerCase() === 'high' ? 'bg-rose-500' : 'bg-amber-400'}`}></div>
                                    
                                    <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center flex-shrink-0 border border-slate-700">
-                                       <ShieldAlert className={`w-6 h-6 ${det.severidad.toLowerCase() === 'alta' ? 'text-rose-400' : 'text-amber-400'}`} />
+                                       <ShieldAlert className={`w-6 h-6 ${det.severidad.toLowerCase() === 'alta' || det.severidad.toLowerCase() === 'high' ? 'text-rose-400' : 'text-amber-400'}`} />
                                    </div>
                                    <div className="flex flex-col w-full">
                                        <div className="flex justify-between items-start mb-1">
@@ -265,11 +337,11 @@ export default function Insectos() {
                                        </div>
                                        <div className="grid grid-cols-2 gap-2 mt-2">
                                            <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                                              <span className="text-[10px] text-slate-500 uppercase block mb-0.5">Severidad</span>
-                                              <span className={`text-sm font-semibold ${det.severidad.toLowerCase() === 'alta' ? 'text-rose-400' : 'text-amber-400'}`}>{det.severidad}</span>
+                                              <span className="text-[10px] text-slate-500 uppercase block mb-0.5">{t.severity}</span>
+                                              <span className={`text-sm font-semibold ${det.severidad.toLowerCase() === 'alta' || det.severidad.toLowerCase() === 'high' ? 'text-rose-400' : 'text-amber-400'}`}>{det.severidad}</span>
                                            </div>
                                            <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                                              <span className="text-[10px] text-slate-500 uppercase block mb-0.5">Recomendación</span>
+                                              <span className="text-[10px] text-slate-500 uppercase block mb-0.5">{t.recommendation}</span>
                                               <span className="text-sm font-semibold text-slate-200 line-clamp-1">{det.accion_recomendada}</span>
                                            </div>
                                        </div>
@@ -280,9 +352,9 @@ export default function Insectos() {
                    ) : (
                        <div className="bg-emerald-900/20 border border-emerald-500/30 p-10 rounded-3xl flex flex-col items-center text-center">
                            <CheckCircle2 className="w-16 h-16 text-emerald-400 mb-4" />
-                           <h4 className="text-emerald-100 font-bold text-xl mb-2">Ningún Insecto Detectado</h4>
+                           <h4 className="text-emerald-100 font-bold text-xl mb-2">{t.noInsect}</h4>
                            <p className="text-emerald-200/60 text-sm max-w-sm">
-                               La IA no encontró signos de infestación. Aún así, sigue los procedimientos Halájicos de lavado regulares.
+                               {t.noInsectDesc}
                            </p>
                        </div>
                    )}
@@ -290,9 +362,9 @@ export default function Insectos() {
            ) : (
                <div className="h-full min-h-[400px] flex flex-col items-center justify-center border-2 border-dashed border-slate-700/50 bg-slate-800/10 rounded-[2.5rem] p-12 text-slate-500">
                     <ShieldAlert className="w-16 h-16 mb-4 opacity-20" />
-                    <h3 className="text-lg font-medium text-slate-400 mb-2 text-center">Esperando Imagen</h3>
+                    <h3 className="text-lg font-medium text-slate-400 mb-2 text-center">{t.waitingImage}</h3>
                     <p className="text-sm text-center max-w-xs text-slate-500">
-                      Toma una foto de alta calidad a las hojas con buena iluminación natural para obtener los mejores resultados de la IA.
+                      {t.waitingImageDesc}
                     </p>
                </div>
            )}
@@ -301,3 +373,4 @@ export default function Insectos() {
     </main>
   );
 }
+
