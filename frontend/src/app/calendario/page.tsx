@@ -17,6 +17,12 @@ const TEXTS = {
     pesajDesc: 'La liberación de Egipto. Prohibición absoluta de consumir o poseer Jametz (leudados).',
     pesajTip: 'Se requiere una limpieza milimétrica del hogar. Todo alimento empacado durante estos 8 días requiere explícitamente el sello "Kosher L\'Pesach". Ashknenazím evitan comer Kitniyot (arroz, maíz, legumbres).',
     pesajLink: 'Ver Mega-Guía de Pesaj',
+    purimLink: 'Ver Mega-Guía de Purim',
+    shavuotLink: 'Ver Mega-Guía de Shavuot',
+    roshLink: 'Ver Mega-Guía de Rosh Hashaná',
+    kipurLink: 'Ver Mega-Guía de Yom Kipur',
+    sukotLink: 'Ver Mega-Guía de Sukot',
+    janucaLink: 'Ver Mega-Guía de Janucá',
     shavuotDesc: 'Celebra la entrega sublime de la Torá en el Monte Sinaí.',
     shavuotTip: 'Es tradición consumir majestuosos banquetes lácteos (Cheesecakes, pastas). Presta especial atención al sello de "Jalav Israel" (leche supervisada) y no olvides esperar el tiempo reglamentario tras comer carne antes de consumir los lácteos festivos.',
     roshDesc: 'El Año Nuevo Judío. Días del juicio y la coronación divina.',
@@ -39,6 +45,12 @@ const TEXTS = {
     pesajDesc: 'The liberation from Egypt. Absolute prohibition of consuming or possessing Chametz (leavened bread).',
     pesajTip: 'Meticulous home cleaning is required. All packaged food during these 8 days explicitly requires the "Kosher L\'Pesach" seal. Ashkenazim avoid eating Kitniyot (rice, corn, legumes).',
     pesajLink: 'View Pesach Mega-Guide',
+    purimLink: 'View Purim Mega-Guide',
+    shavuotLink: 'View Shavuot Mega-Guide',
+    roshLink: 'View Rosh Hashanah Mega-Guide',
+    kipurLink: 'View Yom Kippur Mega-Guide',
+    sukotLink: 'View Sukkot Mega-Guide',
+    janucaLink: 'View Hanukkah Mega-Guide',
     shavuotDesc: 'Celebrates the sublime giving of the Torah at Mount Sinai.',
     shavuotTip: 'It is a tradition to consume majestic dairy banquets (Cheesecakes, pastas). Pay special attention to the "Cholov Yisroel" (supervised milk) seal and do not forget to wait the required time after eating meat before consuming festive dairy.',
     roshDesc: 'The Jewish New Year. Days of judgment and divine coronation.',
@@ -67,8 +79,8 @@ export default function CalendarioPage() {
       color: 'bg-fuchsia-500',
       description: t.purimDesc,
       kashrutTip: t.purimTip,
-      linkText: null,
-      linkHref: null
+      linkText: t.purimLink,
+      linkHref: '/chaguim'
     },
     {
       id: 'pesaj',
@@ -91,8 +103,8 @@ export default function CalendarioPage() {
       color: 'bg-sky-500',
       description: t.shavuotDesc,
       kashrutTip: t.shavuotTip,
-      linkText: null,
-      linkHref: null
+      linkText: t.shavuotLink,
+      linkHref: '/chaguim'
     },
     {
       id: 'rosh-hashana',
@@ -103,8 +115,8 @@ export default function CalendarioPage() {
       color: 'bg-rose-500',
       description: t.roshDesc,
       kashrutTip: t.roshTip,
-      linkText: null,
-      linkHref: null
+      linkText: t.roshLink,
+      linkHref: '/chaguim'
     },
     {
       id: 'yom-kipur',
@@ -115,8 +127,8 @@ export default function CalendarioPage() {
       color: 'bg-amber-500',
       description: t.kipurDesc,
       kashrutTip: t.kipurTip,
-      linkText: null,
-      linkHref: null
+      linkText: t.kipurLink,
+      linkHref: '/chaguim'
     },
     {
       id: 'sukot',
@@ -127,8 +139,8 @@ export default function CalendarioPage() {
       color: 'bg-emerald-600',
       description: t.sukotDesc,
       kashrutTip: t.sukotTip,
-      linkText: null,
-      linkHref: null
+      linkText: t.sukotLink,
+      linkHref: '/chaguim'
     },
     {
       id: 'januca',
@@ -139,8 +151,8 @@ export default function CalendarioPage() {
       color: 'bg-orange-500',
       description: t.janucaDesc,
       kashrutTip: t.janucaTip,
-      linkText: null,
-      linkHref: null
+      linkText: t.janucaLink,
+      linkHref: '/chaguim'
     }
   ];
 
