@@ -80,7 +80,7 @@ export default function CalendarioPage() {
       description: t.purimDesc,
       kashrutTip: t.purimTip,
       linkText: t.purimLink,
-      linkHref: '/chaguim'
+      linkHref: '/chaguim?jag=purim'
     },
     {
       id: 'pesaj',
@@ -92,7 +92,7 @@ export default function CalendarioPage() {
       description: t.pesajDesc,
       kashrutTip: t.pesajTip,
       linkText: t.pesajLink,
-      linkHref: '/chaguim'
+      linkHref: '/chaguim?jag=pesaj'
     },
     {
       id: 'shavuot',
@@ -104,7 +104,7 @@ export default function CalendarioPage() {
       description: t.shavuotDesc,
       kashrutTip: t.shavuotTip,
       linkText: t.shavuotLink,
-      linkHref: '/chaguim'
+      linkHref: '/chaguim?jag=shavuot'
     },
     {
       id: 'rosh-hashana',
@@ -116,7 +116,7 @@ export default function CalendarioPage() {
       description: t.roshDesc,
       kashrutTip: t.roshTip,
       linkText: t.roshLink,
-      linkHref: '/chaguim'
+      linkHref: '/chaguim?jag=rosh-hashana'
     },
     {
       id: 'yom-kipur',
@@ -128,7 +128,7 @@ export default function CalendarioPage() {
       description: t.kipurDesc,
       kashrutTip: t.kipurTip,
       linkText: t.kipurLink,
-      linkHref: '/chaguim'
+      linkHref: '/chaguim?jag=yom-kipur'
     },
     {
       id: 'sukot',
@@ -140,7 +140,7 @@ export default function CalendarioPage() {
       description: t.sukotDesc,
       kashrutTip: t.sukotTip,
       linkText: t.sukotLink,
-      linkHref: '/chaguim'
+      linkHref: '/chaguim?jag=sukot'
     },
     {
       id: 'januca',
@@ -152,7 +152,7 @@ export default function CalendarioPage() {
       description: t.janucaDesc,
       kashrutTip: t.janucaTip,
       linkText: t.janucaLink,
-      linkHref: '/chaguim'
+      linkHref: '/chaguim?jag=januca'
     }
   ];
 

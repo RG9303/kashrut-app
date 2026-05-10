@@ -1,4 +1,5 @@
-'use client';
+with open("src/app/chaguim/page.tsx", "w") as f:
+    f.write("""'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
@@ -57,8 +58,8 @@ function ChaguimContent() {
         clean3: "Realizar Bedikat Jametz (Búsqueda) la noche anterior con vela y pluma.",
         laws1Ashk: "Prohibición absoluta de Kitniyot. No se permite arroz, maíz, frijoles, lentejas ni derivados como jarabe de maíz.",
         laws1Sef: "Permitido el consumo de Kitniyot (arroz, frijoles, etc.) si se revisan meticulosamente según la tradición familiar.",
-        laws2Ashk: 'Los productos Kosher L\'Pesach que dicen "Leojlei Kitniyot" NO son aptos para ti.',
-        laws2Sef: 'Puedes consumir productos marcados como Kosher L\'Pesach "Leojlei Kitniyot".',
+        laws2Ashk: 'Los productos Kosher L\\'Pesach que dicen "Leojlei Kitniyot" NO son aptos para ti.',
+        laws2Sef: 'Puedes consumir productos marcados como Kosher L\\'Pesach "Leojlei Kitniyot".',
         kashItems: [
           { name: "Hornos", desc: "No usar 24 horas. Limpiar con químico fuerte. Encender a máxima temperatura por 1 hora o usar función Self-Clean." },
           { name: "Microondas", desc: "No usar 24 horas. Limpiar bien. Hervir un vaso de agua dentro por 10 minutos hasta que el vapor cubra las paredes." },
@@ -75,8 +76,8 @@ function ChaguimContent() {
         clean3: "Perform Bedikat Chametz (Search) the night before with a candle and feather.",
         laws1Ashk: "Absolute prohibition of Kitniyot. Rice, corn, beans, lentils or derivatives like corn syrup are not allowed.",
         laws1Sef: "Consumption of Kitniyot (rice, beans, etc.) is allowed if meticulously checked according to family tradition.",
-        laws2Ashk: 'Kosher L\'Pesach products that say "L\'Ochlei Kitniyot" are NOT suitable for you.',
-        laws2Sef: 'You can consume products marked as Kosher L\'Pesach "L\'Ochlei Kitniyot".',
+        laws2Ashk: 'Kosher L\\'Pesach products that say "L\\'Ochlei Kitniyot" are NOT suitable for you.',
+        laws2Sef: 'You can consume products marked as Kosher L\\'Pesach "L\\'Ochlei Kitniyot".',
         kashItems: [
           { name: "Ovens", desc: "Do not use for 24 hours. Clean with strong chemical. Turn on at max temp for 1 hour or use Self-Clean." },
           { name: "Microwave", desc: "Do not use for 24 hours. Clean well. Boil a glass of water inside for 10 minutes until steam covers walls." },
@@ -440,3 +441,5 @@ export default function ChaguimWrapper() {
     </Suspense>
   );
 }
+""")
+print("Generated dynamic chaguim page")
